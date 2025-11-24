@@ -198,7 +198,7 @@ const rutaSchema = new mongoose.Schema(
     },
     estado: {
       type: String,
-      enum: ["iniciada", "pausada", "pendiente", "finalizada"],
+      enum: ["iniciada", "pausada", "pendiente", "finalizada", "cancelada"],
       default: "pendiente",
     },
     fechaFinalizacion: {

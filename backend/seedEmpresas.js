@@ -41,9 +41,9 @@ const empresas = [
     contacto: "800 123 456",
   },
   {
-    rut: "12.345.678-5",
-    razonSocial: "Vivipra",
-    contacto: "600 123 4567",
+    rut: "76.987.654-5",
+    razonSocial: "Vivipra Transportes Ltda.",
+    contacto: "+56 2 2345 6789",
   },
 ];
 
