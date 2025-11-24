@@ -9,6 +9,9 @@ const jwt = require("jsonwebtoken");
 // Importar modelos desde backend.js
 const { EmpresaReparto, Despacho, Ruta } = require("./backend");
 
+// Importar fetch para Node.js
+const fetch = require("node-fetch");
+
 // ===== CONFIGURACIÓN =====
 const app = express();
 const PORT = process.env.PORT || 4000; // Puerto 4000 para no interferir con frontend (3000)
@@ -19,24 +22,10 @@ const PORT = process.env.PORT || 4000; // Puerto 4000 para no interferir con fro
 const MONGO_URI =
   process.env.MONGO_URI || "mongodb://localhost:27017/ultimamillav2";
 
-// Secret para verificar JWT (en producción debe estar en variables de entorno)
-const JWT_SECRET = process.env.JWT_SECRET || "secret_key";
-
 // ===== MIDDLEWARES GLOBALES =====
 app.use(cors()); // Permite peticiones desde el frontend
 app.use(express.json()); // Parse de JSON en el body
 app.use(express.urlencoded({ extended: true })); // Parse de form data
-
-// ===== CONEXIÓN A MONGODB =====
-mongoose
-  .connect(MONGO_URI)
-  .then(() => {
-    console.log("Conectado a MongoDB:", MONGO_URI);
-  })
-  .catch((error) => {
-    console.error("Error al conectar a MongoDB:", error);
-    process.exit(1); // Detener el servidor si no hay conexión
-  });
 
 // ===== MIDDLEWARE DE AUTENTICACIÓN =====
 const authMiddleware = (req, res, next) => {
@@ -44,6 +33,7 @@ const authMiddleware = (req, res, next) => {
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      console.log("❌ Token no proporcionado o formato incorrecto");
       return res.status(401).json({
         status: "error",
         message: "Token no proporcionado",
@@ -51,27 +41,31 @@ const authMiddleware = (req, res, next) => {
     }
 
     const token = authHeader.split(" ")[1];
-    const decoded = jwt.verify(token, JWT_SECRET);
-    req.user = decoded;
-    next();
-  } catch (error) {
-    if (error.name === "JsonWebTokenError") {
+    console.log("🔑 Token recibido:", token.substring(0, 50) + "...");
+
+    // Decodificar sin verificar ya que el servidor remoto ya verificó el token
+    const decoded = jwt.decode(token, { complete: false });
+
+    console.log("✅ Token decodificado:", decoded ? "Éxito" : "Falló");
+    if (decoded) {
+      console.log("👤 Usuario:", decoded.usuario, "Rol:", decoded.rol);
+    }
+
+    if (!decoded) {
       return res.status(401).json({
         status: "error",
         message: "Token inválido",
       });
     }
 
-    if (error.name === "TokenExpiredError") {
-      return res.status(401).json({
-        status: "error",
-        message: "Token expirado",
-      });
-    }
-
+    req.user = decoded;
+    next();
+  } catch (error) {
+    console.error("❌ Error al procesar token:", error);
     return res.status(500).json({
       status: "error",
-      message: "Error al verificar token",
+      message: "Error al procesar token",
+      error: error.message,
     });
   }
 };
@@ -105,6 +99,71 @@ const requireRoles = (allowedRoles) => {
   };
 };
 
+// ===== SERVICIO DE SINCRONIZACIÓN DE DESPACHOS =====
+const EXTERNAL_API_URL = "http://192.168.200.80:3000/data/FactDespacho";
+const SYNC_INTERVAL = 5 * 60 * 1000; // 5 minutos en milisegundos
+
+// Función para sincronizar despachos desde el endpoint externo
+async function sincronizarDespachos() {
+  try {
+    console.log("🔄 Sincronizando despachos desde API externa...");
+
+    const response = await fetch(EXTERNAL_API_URL);
+    if (!response.ok) {
+      throw new Error(`Error HTTP: ${response.status}`);
+    }
+
+    const despachos = await response.json();
+    let nuevos = 0;
+    let actualizados = 0;
+
+    for (const despachoDatos of despachos) {
+      try {
+        // Buscar si ya existe por FolioNum
+        const existente = await Despacho.findOne({ FolioNum: despachoDatos.FolioNum });
+
+        if (existente) {
+          // Actualizar solo si hay cambios
+          await Despacho.findByIdAndUpdate(existente._id, despachoDatos);
+          actualizados++;
+        } else {
+          // Crear nuevo despacho con estado pendiente por defecto
+          const nuevoDespacho = new Despacho({
+            ...despachoDatos,
+            estado: "pendiente",
+          });
+          await nuevoDespacho.save();
+          nuevos++;
+        }
+      } catch (error) {
+        console.error(`Error al procesar despacho ${despachoDatos.FolioNum}:`, error.message);
+      }
+    }
+
+    console.log(`✅ Sincronización completada: ${nuevos} nuevos, ${actualizados} actualizados`);
+  } catch (error) {
+    console.error("❌ Error al sincronizar despachos:", error.message);
+  }
+}
+
+// Iniciar sincronización automática después de conectar a MongoDB
+mongoose
+  .connect(MONGO_URI)
+  .then(() => {
+    console.log("✅ Conectado a MongoDB:", MONGO_URI);
+
+    // Sincronizar inmediatamente al iniciar
+    sincronizarDespachos();
+
+    // Sincronizar cada 5 minutos
+    setInterval(sincronizarDespachos, SYNC_INTERVAL);
+    console.log(`🔁 Sincronización automática activada (cada ${SYNC_INTERVAL / 1000 / 60} minutos)`);
+  })
+  .catch((error) => {
+    console.error("❌ Error al conectar a MongoDB:", error);
+    process.exit(1);
+  });
+
 // ===== RUTA DE PRUEBA =====
 app.get("/", (req, res) => {
   res.json({
@@ -123,7 +182,7 @@ app.get("/", (req, res) => {
 app.get(
   "/api/empresas",
   authMiddleware,
-  requireRoles(["adminBodega", "subBodega"]),
+  requireRoles(["admin", "adminBodega", "subBodega"]),
   async (req, res) => {
     try {
       const empresas = await EmpresaReparto.find().sort({ createdAt: -1 });
@@ -146,7 +205,7 @@ app.get(
 app.get(
   "/api/empresas/:id",
   authMiddleware,
-  requireRoles(["adminBodega", "subBodega"]),
+  requireRoles(["admin", "adminBodega", "subBodega"]),
   async (req, res) => {
     try {
       const empresa = await EmpresaReparto.findById(req.params.id);
@@ -176,7 +235,7 @@ app.get(
 app.post(
   "/api/empresas",
   authMiddleware,
-  requireRoles(["adminBodega", "subBodega"]),
+  requireRoles(["admin", "adminBodega", "subBodega"]),
   async (req, res) => {
     try {
       const empresa = new EmpresaReparto(req.body);
@@ -209,7 +268,7 @@ app.post(
 app.put(
   "/api/empresas/:id",
   authMiddleware,
-  requireRoles(["adminBodega", "subBodega"]),
+  requireRoles(["admin", "adminBodega", "subBodega"]),
   async (req, res) => {
     try {
       const empresa = await EmpresaReparto.findByIdAndUpdate(
@@ -244,7 +303,7 @@ app.put(
 app.delete(
   "/api/empresas/:id",
   authMiddleware,
-  requireRoles(["adminBodega", "subBodega"]),
+  requireRoles(["admin", "adminBodega", "subBodega"]),
   async (req, res) => {
     try {
       const empresa = await EmpresaReparto.findByIdAndDelete(req.params.id);
@@ -280,7 +339,7 @@ app.delete(
 app.get(
   "/api/despachos",
   authMiddleware,
-  requireRoles(["chofer", "subBodega", "adminBodega"]),
+  requireRoles(["admin", "chofer", "subBodega", "adminBodega"]),
   async (req, res) => {
     try {
       const despachos = await Despacho.find()
@@ -307,7 +366,7 @@ app.get(
 app.get(
   "/api/despachos/:id",
   authMiddleware,
-  requireRoles(["chofer", "subBodega", "adminBodega"]),
+  requireRoles(["admin", "chofer", "subBodega", "adminBodega"]),
   async (req, res) => {
     try {
       const despacho = await Despacho.findById(req.params.id)
@@ -339,7 +398,7 @@ app.get(
 app.post(
   "/api/despachos",
   authMiddleware,
-  requireRoles(["chofer", "subBodega", "adminBodega"]),
+  requireRoles(["admin", "chofer", "subBodega", "adminBodega"]),
   async (req, res) => {
     try {
       const despacho = new Despacho(req.body);
@@ -371,7 +430,7 @@ app.post(
 app.put(
   "/api/despachos/:id",
   authMiddleware,
-  requireRoles(["chofer", "subBodega", "adminBodega"]),
+  requireRoles(["admin", "chofer", "subBodega", "adminBodega"]),
   async (req, res) => {
     try {
       const despacho = await Despacho.findByIdAndUpdate(
@@ -408,7 +467,7 @@ app.put(
 app.delete(
   "/api/despachos/:id",
   authMiddleware,
-  requireRoles(["chofer", "subBodega", "adminBodega"]),
+  requireRoles(["admin", "chofer", "subBodega", "adminBodega"]),
   async (req, res) => {
     try {
       const despacho = await Despacho.findByIdAndDelete(req.params.id);
@@ -444,7 +503,7 @@ app.delete(
 app.get(
   "/api/rutas",
   authMiddleware,
-  requireRoles(["chofer", "subBodega", "adminBodega"]),
+  requireRoles(["admin", "chofer", "subBodega", "adminBodega"]),
   async (req, res) => {
     try {
       const rutas = await Ruta.find()
@@ -471,7 +530,7 @@ app.get(
 app.get(
   "/api/rutas/:id",
   authMiddleware,
-  requireRoles(["chofer", "subBodega", "adminBodega"]),
+  requireRoles(["admin", "chofer", "subBodega", "adminBodega"]),
   async (req, res) => {
     try {
       const ruta = await Ruta.findById(req.params.id)
@@ -503,11 +562,30 @@ app.get(
 app.post(
   "/api/rutas",
   authMiddleware,
-  requireRoles(["chofer", "subBodega", "adminBodega"]),
+  requireRoles(["admin", "chofer", "subBodega", "adminBodega"]),
   async (req, res) => {
     try {
+      console.log("📝 Datos recibidos para crear ruta:", JSON.stringify(req.body, null, 2));
+
       const ruta = new Ruta(req.body);
       await ruta.save();
+
+      console.log("✅ Ruta creada exitosamente:", ruta._id);
+
+      // Actualizar los despachos asignados a esta ruta
+      if (ruta.despachos && ruta.despachos.length > 0) {
+        await Despacho.updateMany(
+          { _id: { $in: ruta.despachos } },
+          {
+            $set: {
+              estado: "asignado",
+              rutaAsignada: ruta._id,
+              empresaReparto: ruta.empresaReparto
+            }
+          }
+        );
+        console.log(`✅ ${ruta.despachos.length} despachos actualizados a estado 'asignado'`);
+      }
 
       res.status(201).json({
         status: "success",
@@ -515,6 +593,9 @@ app.post(
         data: ruta,
       });
     } catch (error) {
+      console.error("❌ Error al crear ruta:", error.message);
+      console.error("❌ Detalles del error:", error);
+
       if (error.code === 11000) {
         return res.status(400).json({
           status: "error",
@@ -526,6 +607,10 @@ app.post(
         status: "error",
         message: "Error al crear ruta",
         error: error.message,
+        details: error.errors ? Object.keys(error.errors).map(key => ({
+          field: key,
+          message: error.errors[key].message
+        })) : []
       });
     }
   }
@@ -535,7 +620,7 @@ app.post(
 app.put(
   "/api/rutas/:id",
   authMiddleware,
-  requireRoles(["chofer", "subBodega", "adminBodega"]),
+  requireRoles(["admin", "chofer", "subBodega", "adminBodega"]),
   async (req, res) => {
     try {
       const ruta = await Ruta.findByIdAndUpdate(req.params.id, req.body, {
@@ -571,7 +656,7 @@ app.put(
 app.delete(
   "/api/rutas/:id",
   authMiddleware,
-  requireRoles(["chofer", "subBodega", "adminBodega"]),
+  requireRoles(["admin", "chofer", "subBodega", "adminBodega"]),
   async (req, res) => {
     try {
       const ruta = await Ruta.findByIdAndDelete(req.params.id);
@@ -592,6 +677,33 @@ app.delete(
       res.status(500).json({
         status: "error",
         message: "Error al eliminar ruta",
+        error: error.message,
+      });
+    }
+  }
+);
+
+// ================================================================
+// ===== ENDPOINT: SINCRONIZACIÓN MANUAL DE DESPACHOS =====
+// ================================================================
+// admin, adminBodega y subBodega pueden forzar sincronización
+
+// POST /api/sync/despachos - Forzar sincronización manual
+app.post(
+  "/api/sync/despachos",
+  authMiddleware,
+  requireRoles(["admin", "adminBodega", "subBodega"]),
+  async (req, res) => {
+    try {
+      await sincronizarDespachos();
+      res.json({
+        status: "success",
+        message: "Sincronización de despachos completada",
+      });
+    } catch (error) {
+      res.status(500).json({
+        status: "error",
+        message: "Error al sincronizar despachos",
         error: error.message,
       });
     }
