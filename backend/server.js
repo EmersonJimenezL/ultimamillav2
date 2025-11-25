@@ -463,6 +463,67 @@ app.put(
   }
 );
 
+// POST /api/despachos/:id/entregar - Marcar despacho como entregado
+app.post(
+  "/api/despachos/:id/entregar",
+  authMiddleware,
+  requireRoles(["admin", "chofer", "subBodega", "adminBodega"]),
+  async (req, res) => {
+    try {
+      const despacho = await Despacho.findById(req.params.id);
+
+      if (!despacho) {
+        return res.status(404).json({
+          status: "error",
+          message: "Despacho no encontrado",
+        });
+      }
+
+      // Marcar como entregado
+      despacho.estado = "entregado";
+      await despacho.save();
+
+      // Verificar si este despacho pertenece a una ruta
+      if (despacho.rutaAsignada) {
+        const ruta = await Ruta.findById(despacho.rutaAsignada).populate("despachos");
+
+        if (ruta) {
+          // Obtener todos los IDs de despachos de la ruta
+          const despachosIds = ruta.despachos.map(d => d._id || d);
+
+          // Verificar si todos los despachos están entregados
+          const todosEntregados = await Despacho.find({
+            _id: { $in: despachosIds }
+          });
+
+          const todosEstanEntregados = todosEntregados.every(d => d.estado === "entregado");
+
+          // Si todos están entregados, marcar la ruta como finalizada
+          if (todosEstanEntregados) {
+            ruta.estado = "finalizada";
+            ruta.fechaFinalizacion = new Date();
+            await ruta.save();
+            console.log(`✅ Ruta ${ruta.numeroRuta} marcada como finalizada - Todos los despachos entregados`);
+          }
+        }
+      }
+
+      res.json({
+        status: "success",
+        message: "Despacho marcado como entregado",
+        data: despacho,
+      });
+    } catch (error) {
+      console.error("❌ Error al marcar despacho como entregado:", error);
+      res.status(500).json({
+        status: "error",
+        message: "Error al marcar despacho como entregado",
+        error: error.message,
+      });
+    }
+  }
+);
+
 // DELETE /api/despachos/:id - Eliminar despacho
 app.delete(
   "/api/despachos/:id",
