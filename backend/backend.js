@@ -139,6 +139,27 @@ const despachoSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Ruta",
     },
+    // Datos de la entrega (se completan cuando el chofer entrega)
+    entrega: {
+      receptorRut: {
+        type: String,
+        trim: true,
+      },
+      receptorNombre: {
+        type: String,
+        trim: true,
+      },
+      receptorApellido: {
+        type: String,
+        trim: true,
+      },
+      fotoEntrega: {
+        type: String, // Base64 de la imagen
+      },
+      fechaEntrega: {
+        type: Date,
+      },
+    },
   },
   {
     timestamps: true,
@@ -156,9 +177,14 @@ const rutaSchema = new mongoose.Schema(
     },
     conductor: {
       type: String,
-      required: [true, "El conductor es obligatorio"],
+      required: false, // Opcional si es chofer externo
       trim: true,
       // Se mostrará como opciones los usuarios con rol chofer
+    },
+    esChoferExterno: {
+      type: Boolean,
+      default: false,
+      // Si es true, el conductor se debe completar cuando el chofer inicie sesión
     },
     patente: {
       type: String,

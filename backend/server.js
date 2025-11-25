@@ -714,6 +714,218 @@ app.put(
 );
 
 
+// POST /api/rutas/:id/iniciar - Iniciar ruta (chofer ingresa patente y datos si es externo)
+app.post(
+  "/api/rutas/:id/iniciar",
+  authMiddleware,
+  requireRoles(["chofer"]),
+  async (req, res) => {
+    try {
+      const { patente, nombreConductor } = req.body;
+
+      if (!patente) {
+        return res.status(400).json({
+          status: "error",
+          message: "La patente es obligatoria para iniciar la ruta",
+        });
+      }
+
+      const ruta = await Ruta.findById(req.params.id);
+
+      if (!ruta) {
+        return res.status(404).json({
+          status: "error",
+          message: "Ruta no encontrada",
+        });
+      }
+
+      // Si la ruta ya está iniciada o finalizada
+      if (ruta.estado !== "pendiente") {
+        return res.status(400).json({
+          status: "error",
+          message: `La ruta ya está en estado: ${ruta.estado}`,
+        });
+      }
+
+      // Si es chofer externo, registrar el nombre del conductor
+      if (ruta.esChoferExterno) {
+        if (!nombreConductor) {
+          return res.status(400).json({
+            status: "error",
+            message: "El nombre del conductor es obligatorio para chofer externo",
+          });
+        }
+        ruta.conductor = nombreConductor;
+      }
+
+      // Registrar patente y cambiar estado a iniciada
+      ruta.patente = patente.toUpperCase();
+      ruta.estado = "iniciada";
+      await ruta.save();
+
+      console.log(`🚚 Ruta ${ruta.numeroRuta} iniciada por ${ruta.conductor} con patente ${ruta.patente}`);
+
+      res.json({
+        status: "success",
+        message: "Ruta iniciada exitosamente",
+        data: ruta,
+      });
+    } catch (error) {
+      console.error("❌ Error al iniciar ruta:", error);
+      res.status(500).json({
+        status: "error",
+        message: "Error al iniciar ruta",
+        error: error.message,
+      });
+    }
+  }
+);
+
+// POST /api/despachos/:id/entregar-chofer - Marcar despacho como entregado con datos del receptor y foto
+app.post(
+  "/api/despachos/:id/entregar-chofer",
+  authMiddleware,
+  requireRoles(["chofer"]),
+  async (req, res) => {
+    try {
+      const { receptorRut, receptorNombre, receptorApellido, fotoEntrega } = req.body;
+
+      // Validaciones
+      if (!receptorRut || !receptorNombre || !receptorApellido || !fotoEntrega) {
+        return res.status(400).json({
+          status: "error",
+          message: "Todos los campos son obligatorios: RUT, nombre, apellido y foto",
+        });
+      }
+
+      const despacho = await Despacho.findById(req.params.id);
+
+      if (!despacho) {
+        return res.status(404).json({
+          status: "error",
+          message: "Despacho no encontrado",
+        });
+      }
+
+      // Verificar que el despacho esté asignado a una ruta
+      if (!despacho.rutaAsignada) {
+        return res.status(400).json({
+          status: "error",
+          message: "El despacho no está asignado a ninguna ruta",
+        });
+      }
+
+      // Verificar que el despacho no esté ya entregado
+      if (despacho.estado === "entregado") {
+        return res.status(400).json({
+          status: "error",
+          message: "El despacho ya fue marcado como entregado",
+        });
+      }
+
+      // Actualizar datos de entrega
+      despacho.entrega = {
+        receptorRut: receptorRut.trim(),
+        receptorNombre: receptorNombre.trim(),
+        receptorApellido: receptorApellido.trim(),
+        fotoEntrega: fotoEntrega,
+        fechaEntrega: new Date(),
+      };
+      despacho.estado = "entregado";
+
+      await despacho.save();
+
+      console.log(`📦 Despacho ${despacho.FolioNum} entregado a ${receptorNombre} ${receptorApellido}`);
+
+      // Verificar si todos los despachos de la ruta están entregados
+      const ruta = await Ruta.findById(despacho.rutaAsignada).populate("despachos");
+
+      if (ruta) {
+        const todosEntregados = ruta.despachos.every(
+          (d) => d._id.toString() === despacho._id.toString() || d.estado === "entregado"
+        );
+
+        if (todosEntregados && ruta.estado !== "finalizada") {
+          ruta.estado = "finalizada";
+          ruta.fechaFinalizacion = new Date();
+          await ruta.save();
+          console.log(`✅ Ruta ${ruta.numeroRuta} finalizada automáticamente`);
+        }
+      }
+
+      res.json({
+        status: "success",
+        message: "Despacho entregado exitosamente",
+        data: despacho,
+      });
+    } catch (error) {
+      console.error("❌ Error al entregar despacho:", error);
+      res.status(500).json({
+        status: "error",
+        message: "Error al entregar despacho",
+        error: error.message,
+      });
+    }
+  }
+);
+
+// PUT /api/despachos/:id/datos-entrega - Actualizar datos de entrega (admin/bodega)
+app.put(
+  "/api/despachos/:id/datos-entrega",
+  authMiddleware,
+  requireRoles(["admin", "adminBodega", "subBodega"]),
+  async (req, res) => {
+    try {
+      const { receptorRut, receptorNombre, receptorApellido, fotoEntrega } = req.body;
+
+      const despacho = await Despacho.findById(req.params.id);
+
+      if (!despacho) {
+        return res.status(404).json({
+          status: "error",
+          message: "Despacho no encontrado",
+        });
+      }
+
+      // Solo se pueden actualizar datos de despachos entregados
+      if (despacho.estado !== "entregado") {
+        return res.status(400).json({
+          status: "error",
+          message: "Solo se pueden actualizar datos de despachos entregados",
+        });
+      }
+
+      // Actualizar solo los campos proporcionados
+      if (!despacho.entrega) {
+        despacho.entrega = {};
+      }
+
+      if (receptorRut) despacho.entrega.receptorRut = receptorRut.trim();
+      if (receptorNombre) despacho.entrega.receptorNombre = receptorNombre.trim();
+      if (receptorApellido) despacho.entrega.receptorApellido = receptorApellido.trim();
+      if (fotoEntrega) despacho.entrega.fotoEntrega = fotoEntrega;
+      if (!despacho.entrega.fechaEntrega) despacho.entrega.fechaEntrega = new Date();
+
+      await despacho.save();
+
+      console.log(`📝 Datos de entrega actualizados para despacho ${despacho.FolioNum}`);
+
+      res.json({
+        status: "success",
+        message: "Datos de entrega actualizados exitosamente",
+        data: despacho,
+      });
+    } catch (error) {
+      console.error("❌ Error al actualizar datos de entrega:", error);
+      res.status(500).json({
+        status: "error",
+        message: "Error al actualizar datos de entrega",
+        error: error.message,
+      });
+    }
+  }
+);
+
 // POST /api/rutas/:id/cancelar - Cancelar ruta y liberar despachos no entregados
 app.post(
   "/api/rutas/:id/cancelar",
