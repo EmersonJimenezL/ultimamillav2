@@ -6,7 +6,15 @@
       "Bash(node generateWordDoc.js:*)",
       "Bash(tree:*)",
       "Bash(node:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(npm run build:*)",
+      "Bash(taskkill:*)",
+      "Bash(npm run dev:*)",
+      "Bash(git add:*)",
+      "Bash(cat:*)",
+      "Bash(test:*)",
+      "Bash(git ls-tree:*)",
+      "Bash(git rm:*)"
     ],
     "deny": [],
     "ask": []

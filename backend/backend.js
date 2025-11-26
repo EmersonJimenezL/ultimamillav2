@@ -222,6 +222,10 @@ const rutaSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+    fechaInicio: {
+      type: Date,
+      // Se completará cuando el chofer inicie la ruta
+    },
     estado: {
       type: String,
       enum: ["iniciada", "pausada", "pendiente", "finalizada", "cancelada"],

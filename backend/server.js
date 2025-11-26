@@ -758,8 +758,9 @@ app.post(
         ruta.conductor = nombreConductor;
       }
 
-      // Registrar patente y cambiar estado a iniciada
+      // Registrar patente, fecha de inicio y cambiar estado a iniciada
       ruta.patente = patente.toUpperCase();
+      ruta.fechaInicio = new Date();
       ruta.estado = "iniciada";
       await ruta.save();
 
