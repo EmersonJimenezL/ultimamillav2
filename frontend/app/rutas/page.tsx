@@ -3,11 +3,13 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { rutaService, type Ruta } from "@/services/rutaService";
-import { despachoService, type Despacho } from "@/services/despachoService";
+import { despachoService } from "@/services/despachoService";
 import { Button, PageNavigation, Modal } from "@/components/ui";
 import { useRouter } from "next/navigation";
 import { MetricasTiempo } from "@/components/rutas/MetricasTiempo";
-import { exportRutasToExcel } from "@/utils/exportToExcel";
+import { FiltroEstado, FiltroChofer } from "@/components/rutas/filtros";
+import { useRutas, useFiltrosRuta } from "@/hooks";
+import { exportRutasToExcel, getEstadoBadgeColor, formatRut } from "@/utils";
 
 export default function RutasPage() {
   const { user, logout, isLoading: authLoading } = useAuth();
