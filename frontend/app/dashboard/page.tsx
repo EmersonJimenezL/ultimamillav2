@@ -1,14 +1,30 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { Button, Card } from "@/components/ui";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
+interface DespachoMetrics {
+  total: number;
+  disponibles: number;
+  enRuta: number;
+  entregados: number;
+  cancelados: number;
+}
+
 export default function DashboardPage() {
   const { user, logout } = useAuth();
   const router = useRouter();
+  const [metrics, setMetrics] = useState<DespachoMetrics>({
+    total: 0,
+    disponibles: 0,
+    enRuta: 0,
+    entregados: 0,
+    cancelados: 0,
+  });
+  const [loading, setLoading] = useState(true);
 
   // Redirigir choferes a su dashboard específico
   useEffect(() => {
@@ -16,6 +32,48 @@ export default function DashboardPage() {
       router.push("/chofer");
     }
   }, [user, router]);
+
+  // Cargar métricas de despachos
+  useEffect(() => {
+    const fetchMetrics = async () => {
+      try {
+        setLoading(true);
+        const token = localStorage.getItem("token");
+        const response = await fetch("http://localhost:4000/api/despachos", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          const despachos = result.data;
+
+          // Calcular métricas
+          const metrics = {
+            total: despachos.length,
+            disponibles: despachos.filter((d: any) => d.estado === "disponible")
+              .length,
+            enRuta: despachos.filter(
+              (d: any) => d.estado === "en ruta" || d.rutaAsignada
+            ).length,
+            entregados: despachos.filter((d: any) => d.entrega?.fechaEntrega)
+              .length,
+            cancelados: despachos.filter((d: any) => d.estado === "cancelado")
+              .length,
+          };
+
+          setMetrics(metrics);
+        }
+      } catch (error) {
+        console.error("Error al cargar métricas:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMetrics();
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -31,72 +89,95 @@ export default function DashboardPage() {
         <header className="bg-white shadow-sm border-b border-gray-200">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div>
-                <h1 className="text-2xl font-bold text-black">Dashboard</h1>
-                <p className="text-sm text-gray-600 mt-1">
-                  Sistema de gestión de despachos
-                </p>
+              <div className="flex items-center gap-4">
+                <div>
+                  <h1 className="text-2xl font-bold text-black">Dashboard</h1>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Sistema de gestión de despachos
+                  </p>
+                </div>
               </div>
-              <Button onClick={handleLogout} variant="danger" size="md">
-                Cerrar Sesión
-              </Button>
+              <div className="flex items-center gap-3">
+                {/* Distintivo de usuario */}
+                {user && (
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-orange-50 to-orange-100 border border-orange-200 rounded-lg">
+                    <span className="text-lg">👤</span>
+                    <div className="flex flex-col">
+                      <span className="text-xs sm:text-sm font-semibold text-orange-900 leading-tight">
+                        {user.pnombre} {user.papellido}
+                      </span>
+                      {user.rol && user.rol.length > 0 && (
+                        <span className="text-xs text-orange-600 leading-tight">
+                          {user.rol.join(", ")}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+                <Button onClick={handleLogout} variant="danger" size="md">
+                  Cerrar Sesión
+                </Button>
+              </div>
             </div>
           </div>
         </header>
 
         {/* Contenido */}
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Card de bienvenida */}
-          <Card className="mb-6 border border-gray-100">
-            <div className="flex items-center gap-4 mb-6 pb-6 border-b border-gray-200">
-              <div className="w-16 h-16 bg-linear-to-br from-primary-400 to-primary-600 rounded-full flex items-center justify-center shadow-lg">
-                <span className="text-2xl font-bold text-black">
-                  {user?.pnombre?.charAt(0)}
-                  {user?.papellido?.charAt(0)}
-                </span>
-              </div>
-              <div>
-                <h2 className="text-2xl font-bold text-black">
-                  Bienvenido, {user?.pnombre} {user?.papellido}
-                </h2>
-                <p className="text-gray-600">@{user?.usuario}</p>
-              </div>
-            </div>
+          {/* Métricas de Despachos */}
+          <Card className="mb-6 border-2 border-blue-200 bg-blue-50">
+            <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <span>📊</span> Métricas de Despachos
+            </h2>
 
-            {/* Información del usuario en grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-3">
-                <InfoItem label="Usuario" value={user?.usuario || ""} />
-                <InfoItem label="Email" value={user?.email || ""} />
-                <InfoItem
-                  label="Estado"
-                  value={user?.activo ? "Activo" : "Inactivo"}
-                  valueColor={user?.activo ? "text-green-600" : "text-red-600"}
+            {loading ? (
+              <div className="text-center py-8 text-gray-600">
+                Cargando métricas...
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                <MetricCard
+                  label="Total"
+                  value={metrics.total}
+                  icon="📦"
+                  bgColor="bg-gray-100"
+                  borderColor="border-gray-300"
+                  textColor="text-gray-900"
+                />
+                <MetricCard
+                  label="Disponibles"
+                  value={metrics.disponibles}
+                  icon="✅"
+                  bgColor="bg-green-50"
+                  borderColor="border-green-300"
+                  textColor="text-green-700"
+                />
+                <MetricCard
+                  label="En Ruta"
+                  value={metrics.enRuta}
+                  icon="🚚"
+                  bgColor="bg-blue-50"
+                  borderColor="border-blue-300"
+                  textColor="text-blue-700"
+                />
+                <MetricCard
+                  label="Entregados"
+                  value={metrics.entregados}
+                  icon="✔️"
+                  bgColor="bg-purple-50"
+                  borderColor="border-purple-300"
+                  textColor="text-purple-700"
+                />
+                <MetricCard
+                  label="Cancelados"
+                  value={metrics.cancelados}
+                  icon="❌"
+                  bgColor="bg-red-50"
+                  borderColor="border-red-300"
+                  textColor="text-red-700"
                 />
               </div>
-              <div className="space-y-3">
-                <InfoItem
-                  label="Sucursales"
-                  value={
-                    user?.sucursal
-                      ? Array.isArray(user.sucursal)
-                        ? user.sucursal.join(", ")
-                        : user.sucursal
-                      : ""
-                  }
-                />
-                <InfoItem
-                  label="Áreas"
-                  value={
-                    user?.area
-                      ? Array.isArray(user.area)
-                        ? user.area.join(", ")
-                        : user.area
-                      : ""
-                  }
-                />
-              </div>
-            </div>
+            )}
           </Card>
 
           {/* Sección de acciones rápidas */}
@@ -126,20 +207,31 @@ export default function DashboardPage() {
   );
 }
 
-// Componente auxiliar para mostrar información
-function InfoItem({
+// Componente auxiliar para métricas
+function MetricCard({
   label,
   value,
-  valueColor = "text-black",
+  icon,
+  bgColor,
+  borderColor,
+  textColor,
 }: {
   label: string;
-  value: string;
-  valueColor?: string;
+  value: number;
+  icon: string;
+  bgColor: string;
+  borderColor: string;
+  textColor: string;
 }) {
   return (
-    <div>
-      <p className="text-sm font-medium text-gray-600">{label}</p>
-      <p className={`text-base font-semibold ${valueColor}`}>{value}</p>
+    <div
+      className={`p-4 ${bgColor} border-2 ${borderColor} rounded-lg transition-transform hover:scale-105`}
+    >
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-2xl">{icon}</span>
+        <span className={`text-3xl font-bold ${textColor}`}>{value}</span>
+      </div>
+      <p className="text-sm font-semibold text-gray-700">{label}</p>
     </div>
   );
 }

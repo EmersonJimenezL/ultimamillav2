@@ -156,6 +156,14 @@ export default function EmpresasPage() {
           title="Gestión de Empresas de Reparto"
           description={`${empresas.length} empresa${empresas.length !== 1 ? "s" : ""} registrada${empresas.length !== 1 ? "s" : ""}`}
           currentPage="empresas"
+          userInfo={
+            user
+              ? {
+                  nombre: `${user.pnombre} ${user.papellido}`,
+                  rol: user.rol.join(", "),
+                }
+              : undefined
+          }
           actions={
             <>
               <Button

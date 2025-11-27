@@ -274,6 +274,14 @@ export default function RutasPage() {
             rutas.length !== 1 ? "s" : ""
           } en total`}
           currentPage="rutas"
+          userInfo={
+            user
+              ? {
+                  nombre: `${user.pnombre} ${user.papellido}`,
+                  rol: user.rol.join(", "),
+                }
+              : undefined
+          }
           actions={
             <>
               <Button

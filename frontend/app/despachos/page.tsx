@@ -222,6 +222,14 @@ export default function DespachosPage() {
               despachosFiltrados.length !== 1 ? "s" : ""
             } disponible${despachosFiltrados.length !== 1 ? "s" : ""}`}
             currentPage="despachos"
+            userInfo={
+              user
+                ? {
+                    nombre: `${user.pnombre} ${user.papellido}`,
+                    rol: user.rol.join(", "),
+                  }
+                : undefined
+            }
             actions={
               <>
                 <Button
