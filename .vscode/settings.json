@@ -1,0 +1,51 @@
+{
+  // Desactivar GitHub Copilot completamente
+  "github.copilot.enable": {
+    "*": false
+  },
+  "github.copilot.editor.enableAutoCompletions": false,
+  "github.copilot.advanced": {},
+
+  // Desactivar TODAS las sugerencias inline
+  "editor.inlineSuggest.enabled": false,
+  "editor.quickSuggestions": {
+    "other": "off",
+    "comments": "off",
+    "strings": "off"
+  },
+  "editor.suggestOnTriggerCharacters": false,
+  "editor.acceptSuggestionOnCommitCharacter": false,
+  "editor.acceptSuggestionOnEnter": "off",
+  "editor.tabCompletion": "off",
+  "editor.wordBasedSuggestions": "off",
+  "editor.parameterHints.enabled": false,
+  "editor.hover.enabled": false,
+  "editor.snippetSuggestions": "none",
+
+  // Desactivar Cursor/Windsurf AI (si es lo que estás usando)
+  "cursor.cpp.disabledLanguages": ["*"],
+  "aipopup.enable": false,
+  "windsurf.enable": false,
+
+  // Desactivar Codeium
+  "codeium.enableCodeLens": false,
+  "codeium.enableSearch": false,
+
+  // Desactivar Tabnine
+  "tabnine.experimentalAutoImports": false,
+
+  // Desactivar IntelliCode
+  "vsintellicode.modify.editor.suggestSelection": "automaticallyOverrodeDefaultValue",
+
+  // Desactivar telemetría y popups de extensiones
+  "telemetry.telemetryLevel": "off",
+  "extensions.ignoreRecommendations": true,
+  "update.mode": "none",
+  "workbench.statusBar.visible": true,
+
+  // Desactivar notificaciones y popups
+  "window.titleBarStyle": "custom",
+  "breadcrumbs.enabled": false,
+  "editor.lightbulb.enabled": "off",
+  "problems.decorations.enabled": false
+}
