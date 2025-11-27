@@ -7,6 +7,7 @@ import { despachoService, type Despacho } from "@/services/despachoService";
 import { Button, PageNavigation, Modal } from "@/components/ui";
 import { useRouter } from "next/navigation";
 import { MetricasTiempo } from "@/components/rutas/MetricasTiempo";
+import { exportRutasToExcel } from "@/utils/exportToExcel";
 
 export default function RutasPage() {
   const { user, logout, isLoading: authLoading } = useAuth();
@@ -285,14 +286,32 @@ export default function RutasPage() {
           actions={
             <>
               <Button
+                onClick={() => exportRutasToExcel(rutas as any)}
+                variant="primary"
+                size="sm"
+                disabled={rutas.length === 0}
+                className="text-xs sm:text-sm whitespace-nowrap"
+              >
+                <span className="hidden sm:inline">📊 Exportar a Excel</span>
+                <span className="sm:hidden">📊 Excel</span>
+              </Button>
+              <Button
                 onClick={() => router.push("/dashboard")}
                 variant="secondary"
                 size="sm"
+                className="text-xs sm:text-sm whitespace-nowrap"
               >
-                ← Volver
+                <span className="hidden sm:inline">← Volver</span>
+                <span className="sm:hidden">←</span>
               </Button>
-              <Button onClick={handleLogout} variant="danger" size="sm">
-                Cerrar Sesión
+              <Button
+                onClick={handleLogout}
+                variant="danger"
+                size="sm"
+                className="text-xs sm:text-sm whitespace-nowrap"
+              >
+                <span className="hidden sm:inline">Cerrar Sesión</span>
+                <span className="sm:hidden">Salir</span>
               </Button>
             </>
           }

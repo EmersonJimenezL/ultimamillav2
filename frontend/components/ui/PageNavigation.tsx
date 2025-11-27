@@ -81,12 +81,12 @@ export function PageNavigation({
       </div>
 
       {/* Header con título y acciones */}
-      <div className="flex items-center justify-between mb-2">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-2">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">{title}</h1>
-          {description && <p className="text-gray-600 mt-1">{description}</p>}
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{title}</h1>
+          {description && <p className="text-gray-600 mt-1 text-sm sm:text-base">{description}</p>}
         </div>
-        {actions && <div className="flex gap-3">{actions}</div>}
+        {actions && <div className="flex flex-wrap gap-2 sm:gap-3">{actions}</div>}
       </div>
     </div>
   );
