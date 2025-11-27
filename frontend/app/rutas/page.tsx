@@ -69,7 +69,13 @@ export default function RutasPage() {
   };
 
   const handleCancelar = async (rutaId: string, numeroRuta?: string) => {
-    if (!confirm(`¿Estás seguro de cancelar la ruta ${numeroRuta || rutaId}?\n\nLos despachos no entregados volverán a estar disponibles.`)) {
+    if (
+      !confirm(
+        `¿Estás seguro de cancelar la ruta ${
+          numeroRuta || rutaId
+        }?\n\nLos despachos no entregados volverán a estar disponibles.`
+      )
+    ) {
       return;
     }
 
@@ -77,7 +83,9 @@ export default function RutasPage() {
       setCancelando(rutaId);
       setError(null);
       const result = await rutaService.cancelar(rutaId);
-      alert(`Ruta cancelada exitosamente.\n${result.data.despachosLiberados} despachos liberados.`);
+      alert(
+        `Ruta cancelada exitosamente.\n${result.data.despachosLiberados} despachos liberados.`
+      );
       await loadRutas();
     } catch (err: any) {
       setError(err.message || "Error al cancelar ruta");
@@ -87,7 +95,10 @@ export default function RutasPage() {
     }
   };
 
-  const handleMarcarEntregado = async (despachoId: string, folioNum: number) => {
+  const handleMarcarEntregado = async (
+    despachoId: string,
+    folioNum: number
+  ) => {
     if (!confirm(`¿Marcar despacho ${folioNum} como entregado?`)) {
       return;
     }
@@ -187,7 +198,9 @@ export default function RutasPage() {
         fotoPreview || undefined
       );
 
-      alert(`Datos de entrega actualizados para despacho ${despachoSeleccionado.FolioNum}`);
+      alert(
+        `Datos de entrega actualizados para despacho ${despachoSeleccionado.FolioNum}`
+      );
       handleCloseDatosModal();
       await loadRutas();
     } catch (err: any) {
@@ -231,12 +244,16 @@ export default function RutasPage() {
   }
 
   // Obtener choferes únicos
-  const choferesUnicos = Array.from(new Set(rutas.map((r) => r.conductor))).sort();
+  const choferesUnicos = Array.from(
+    new Set(rutas.map((r) => r.conductor))
+  ).sort();
 
   // Filtrar rutas según el estado y chofer seleccionados
   const rutasFiltradas = rutas.filter((ruta) => {
-    const matchEstado = filtroEstado === "todas" || ruta.estado === filtroEstado;
-    const matchChofer = filtroChofer === "todos" || ruta.conductor === filtroChofer;
+    const matchEstado =
+      filtroEstado === "todas" || ruta.estado === filtroEstado;
+    const matchChofer =
+      filtroChofer === "todos" || ruta.conductor === filtroChofer;
     return matchEstado && matchChofer;
   });
 
@@ -249,11 +266,13 @@ export default function RutasPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-gray-50 py-4 sm:py-6 md:py-8 px-3 sm:px-4">
+      <div className="max-w-7xl mx-auto overflow-hidden">
         <PageNavigation
           title="Gestión de Rutas"
-          description={`${rutas.length} ruta${rutas.length !== 1 ? "s" : ""} en total`}
+          description={`${rutas.length} ruta${
+            rutas.length !== 1 ? "s" : ""
+          } en total`}
           currentPage="rutas"
           actions={
             <>
@@ -289,12 +308,17 @@ export default function RutasPage() {
               onChange={(e) => setFiltroChofer(e.target.value)}
               className="w-full md:w-64 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-black bg-white"
             >
-              <option value="todos">Todos los conductores ({rutas.length})</option>
+              <option value="todos">
+                Todos los conductores ({rutas.length})
+              </option>
               {choferesUnicos.map((chofer) => {
-                const cantidadRutas = rutas.filter((r) => r.conductor === chofer).length;
+                const cantidadRutas = rutas.filter(
+                  (r) => r.conductor === chofer
+                ).length;
                 return (
                   <option key={chofer} value={chofer}>
-                    {chofer} ({cantidadRutas} ruta{cantidadRutas !== 1 ? "s" : ""})
+                    {chofer} ({cantidadRutas} ruta
+                    {cantidadRutas !== 1 ? "s" : ""})
                   </option>
                 );
               })}
@@ -306,7 +330,7 @@ export default function RutasPage() {
         <div className="mb-6 bg-white rounded-lg shadow-sm p-2 flex flex-wrap gap-2">
           <button
             onClick={() => setFiltroEstado("todas")}
-            className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
+            className={`px-3 sm:px-4 py-2 rounded-lg font-medium text-xs sm:text-sm transition-colors whitespace-nowrap ${
               filtroEstado === "todas"
                 ? "bg-gray-900 text-white"
                 : "bg-gray-100 text-gray-700 hover:bg-gray-200"
@@ -316,7 +340,7 @@ export default function RutasPage() {
           </button>
           <button
             onClick={() => setFiltroEstado("pendiente")}
-            className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
+            className={`px-3 sm:px-4 py-2 rounded-lg font-medium text-xs sm:text-sm transition-colors whitespace-nowrap ${
               filtroEstado === "pendiente"
                 ? "bg-yellow-500 text-white"
                 : "bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
@@ -326,7 +350,7 @@ export default function RutasPage() {
           </button>
           <button
             onClick={() => setFiltroEstado("iniciada")}
-            className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
+            className={`px-3 sm:px-4 py-2 rounded-lg font-medium text-xs sm:text-sm transition-colors whitespace-nowrap ${
               filtroEstado === "iniciada"
                 ? "bg-blue-500 text-white"
                 : "bg-blue-100 text-blue-800 hover:bg-blue-200"
@@ -336,7 +360,7 @@ export default function RutasPage() {
           </button>
           <button
             onClick={() => setFiltroEstado("finalizada")}
-            className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
+            className={`px-3 sm:px-4 py-2 rounded-lg font-medium text-xs sm:text-sm transition-colors whitespace-nowrap ${
               filtroEstado === "finalizada"
                 ? "bg-green-500 text-white"
                 : "bg-green-100 text-green-800 hover:bg-green-200"
@@ -346,7 +370,7 @@ export default function RutasPage() {
           </button>
           <button
             onClick={() => setFiltroEstado("cancelada")}
-            className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
+            className={`px-3 sm:px-4 py-2 rounded-lg font-medium text-xs sm:text-sm transition-colors whitespace-nowrap ${
               filtroEstado === "cancelada"
                 ? "bg-red-500 text-white"
                 : "bg-red-100 text-red-800 hover:bg-red-200"
@@ -358,37 +382,46 @@ export default function RutasPage() {
 
         {/* Lista de rutas */}
         {rutasFiltradas.length === 0 ? (
-          <div className="bg-white rounded-lg shadow-sm p-12 text-center">
-            <p className="text-gray-500 text-lg">
+          <div className="bg-white rounded-lg shadow-sm p-6 sm:p-8 md:p-12 text-center">
+            <p className="text-gray-500 text-sm sm:text-base md:text-lg">
               {filtroEstado === "todas" && filtroChofer === "todos"
                 ? "No hay rutas registradas"
                 : filtroChofer !== "todos"
                 ? `No hay rutas para el conductor "${filtroChofer}"${
-                    filtroEstado !== "todas" ? ` en estado "${filtroEstado}"` : ""
+                    filtroEstado !== "todas"
+                      ? ` en estado "${filtroEstado}"`
+                      : ""
                   }`
                 : `No hay rutas en estado "${filtroEstado}"`}
             </p>
-            {filtroEstado === "todas" && filtroChofer === "todos" && rutas.length === 0 && (
-              <Button onClick={() => router.push("/despachos")} variant="primary" size="md" className="mt-4">
-                Crear Primera Ruta
-              </Button>
-            )}
+            {filtroEstado === "todas" &&
+              filtroChofer === "todos" &&
+              rutas.length === 0 && (
+                <Button
+                  onClick={() => router.push("/despachos")}
+                  variant="primary"
+                  size="md"
+                  className="mt-4"
+                >
+                  Crear Primera Ruta
+                </Button>
+              )}
           </div>
         ) : (
           <div className="grid gap-4">
             {rutasFiltradas.map((ruta) => (
               <div
                 key={ruta._id}
-                className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow"
+                className="bg-white rounded-lg shadow-sm p-3 sm:p-4 md:p-6 hover:shadow-md transition-shadow"
               >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-xl font-bold text-gray-900">
+                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 sm:gap-3 mb-2 flex-wrap">
+                      <h3 className="text-base sm:text-lg md:text-xl font-bold text-gray-900 truncate">
                         {ruta.numeroRuta || `Ruta ${ruta._id.slice(-6)}`}
                       </h3>
                       <span
-                        className={`px-3 py-1 text-xs font-semibold rounded-full ${getEstadoBadgeColor(
+                        className={`px-2 sm:px-3 py-1 text-xs font-semibold rounded-full whitespace-nowrap ${getEstadoBadgeColor(
                           ruta.estado
                         )}`}
                       >
@@ -396,51 +429,98 @@ export default function RutasPage() {
                       </span>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
-                      <div>
-                        <p className="text-xs text-gray-500 uppercase">Conductor</p>
-                        <p className="text-sm font-medium text-gray-900">{ruta.conductor}</p>
-                      </div>
-
-                      {ruta.patente && (
-                        <div>
-                          <p className="text-xs text-gray-500 uppercase">Patente</p>
-                          <p className="text-sm font-medium text-gray-900">{ruta.patente}</p>
-                        </div>
-                      )}
-
-                      <div>
-                        <p className="text-xs text-gray-500 uppercase">Despachos</p>
-                        <p className="text-sm font-medium text-gray-900">
-                          {Array.isArray(ruta.despachos) ? ruta.despachos.length : 0} despachos
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 mt-3 md:mt-4">
+                      <div className="min-w-0">
+                        <p className="text-xs text-gray-500 uppercase">
+                          Conductor
+                        </p>
+                        <p className="text-xs sm:text-sm font-medium text-gray-900 truncate">
+                          {ruta.conductor}
                         </p>
                       </div>
 
-                      <div>
-                        <p className="text-xs text-gray-500 uppercase">Asignado por</p>
-                        <p className="text-sm font-medium text-gray-900">{ruta.asignadoPor}</p>
+                      {ruta.patente && (
+                        <div className="min-w-0">
+                          <p className="text-xs text-gray-500 uppercase">
+                            Patente
+                          </p>
+                          <p className="text-xs sm:text-sm font-medium text-gray-900 truncate">
+                            {ruta.patente}
+                          </p>
+                        </div>
+                      )}
+
+                      <div className="min-w-0">
+                        <p className="text-xs text-gray-500 uppercase">
+                          Despachos
+                        </p>
+                        <p className="text-xs sm:text-sm font-medium text-gray-900">
+                          {Array.isArray(ruta.despachos)
+                            ? ruta.despachos.length
+                            : 0}{" "}
+                          despachos
+                        </p>
                       </div>
 
-                      <div>
-                        <p className="text-xs text-gray-500 uppercase">Fecha de asignación</p>
-                        <p className="text-sm font-medium text-gray-900">
-                          {new Date(ruta.asignadoEl).toLocaleDateString("es-CL", {
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
+                      {/* Tiempo transcurrido (si está iniciada) */}
+                      {ruta.estado === "iniciada" && (
+                        <div className="min-w-0 bg-yellow-50 border border-yellow-200 rounded-lg p-2">
+                          <p className="text-xs text-yellow-700 uppercase font-semibold flex items-center gap-1">
+                            <span>🔄</span> Tiempo transcurrido
+                          </p>
+                          <p className="text-sm sm:text-base font-bold text-yellow-600">
+                            {(() => {
+                              const ahora = new Date();
+                              const fechaRef = ruta.fechaInicio || ruta.asignadoEl;
+                              const tiempoTranscurrido = Math.floor(
+                                (ahora.getTime() - new Date(fechaRef).getTime()) / (1000 * 60)
+                              );
+                              const horas = Math.floor(tiempoTranscurrido / 60);
+                              const minutos = tiempoTranscurrido % 60;
+                              return horas > 0 ? `${horas}h ${minutos}min` : `${minutos} min`;
+                            })()}
+                          </p>
+                        </div>
+                      )}
+
+                      <div className="min-w-0">
+                        <p className="text-xs text-gray-500 uppercase">
+                          Asignado por
+                        </p>
+                        <p className="text-xs sm:text-sm font-medium text-gray-900 truncate">
+                          {ruta.asignadoPor}
+                        </p>
+                      </div>
+
+                      <div className="min-w-0 sm:col-span-2">
+                        <p className="text-xs text-gray-500 uppercase">
+                          Fecha de asignación
+                        </p>
+                        <p className="text-xs sm:text-sm font-medium text-gray-900">
+                          {new Date(ruta.asignadoEl).toLocaleDateString(
+                            "es-CL",
+                            {
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            }
+                          )}
                         </p>
                       </div>
 
                       {ruta.fechaFinalizacion && (
-                        <div>
-                          <p className="text-xs text-gray-500 uppercase">Fecha de finalización</p>
-                          <p className="text-sm font-medium text-gray-900">
-                            {new Date(ruta.fechaFinalizacion).toLocaleDateString("es-CL", {
+                        <div className="min-w-0 sm:col-span-2">
+                          <p className="text-xs text-gray-500 uppercase">
+                            Fecha de finalización
+                          </p>
+                          <p className="text-xs sm:text-sm font-medium text-gray-900">
+                            {new Date(
+                              ruta.fechaFinalizacion
+                            ).toLocaleDateString("es-CL", {
                               year: "numeric",
-                              month: "long",
+                              month: "short",
                               day: "numeric",
                               hour: "2-digit",
                               minute: "2-digit",
@@ -450,10 +530,13 @@ export default function RutasPage() {
                       )}
 
                       {ruta.tiempoTranscurrido && (
-                        <div>
-                          <p className="text-xs text-gray-500 uppercase">Tiempo transcurrido</p>
-                          <p className="text-sm font-medium text-gray-900">
-                            {Math.floor(ruta.tiempoTranscurrido / 60)}h {ruta.tiempoTranscurrido % 60}m
+                        <div className="min-w-0">
+                          <p className="text-xs text-gray-500 uppercase">
+                            Tiempo transcurrido
+                          </p>
+                          <p className="text-xs sm:text-sm font-medium text-gray-900">
+                            {Math.floor(ruta.tiempoTranscurrido / 60)}h{" "}
+                            {ruta.tiempoTranscurrido % 60}m
                           </p>
                         </div>
                       )}
@@ -461,118 +544,159 @@ export default function RutasPage() {
                   </div>
 
                   {/* Acciones */}
-                  <div className="ml-4 flex flex-col gap-2">
+                  <div className="flex md:flex-col gap-2 w-full md:w-auto">
                     <Button
                       onClick={() => toggleRutaExpandida(ruta._id)}
                       variant="secondary"
                       size="sm"
+                      fullWidth
+                      className="md:w-auto"
                     >
-                      {rutaExpandida === ruta._id ? "Ocultar Despachos" : "Ver Despachos"}
+                      {rutaExpandida === ruta._id
+                        ? "Ocultar"
+                        : "Ver Despachos"}
                     </Button>
-                    {ruta.estado !== "finalizada" && ruta.estado !== "cancelada" && (
-                      <Button
-                        onClick={() => handleCancelar(ruta._id, ruta.numeroRuta)}
-                        variant="danger"
-                        size="sm"
-                        disabled={cancelando === ruta._id}
-                      >
-                        {cancelando === ruta._id ? "Cancelando..." : "Cancelar Ruta"}
-                      </Button>
-                    )}
+                    {ruta.estado !== "finalizada" &&
+                      ruta.estado !== "cancelada" && (
+                        <Button
+                          onClick={() =>
+                            handleCancelar(ruta._id, ruta.numeroRuta)
+                          }
+                          variant="danger"
+                          size="sm"
+                          fullWidth
+                          className="md:w-auto"
+                          disabled={cancelando === ruta._id}
+                        >
+                          {cancelando === ruta._id
+                            ? "Cancelando..."
+                            : "Cancelar"}
+                        </Button>
+                      )}
                   </div>
                 </div>
 
                 {/* Despachos de la ruta (expandible) */}
-                {rutaExpandida === ruta._id && Array.isArray(ruta.despachos) && ruta.despachos.length > 0 && (
-                  <div className="mt-6 border-t border-gray-200 pt-4">
-                    {/* Métricas de tiempo */}
-                    <MetricasTiempo
-                      asignadoEl={ruta.asignadoEl}
-                      fechaInicio={ruta.fechaInicio}
-                      fechaFinalizacion={ruta.fechaFinalizacion}
-                      despachos={ruta.despachos as any[]}
-                    />
+                {rutaExpandida === ruta._id &&
+                  Array.isArray(ruta.despachos) &&
+                  ruta.despachos.length > 0 && (
+                    <div className="mt-6 border-t border-gray-200 pt-4">
+                      {/* Métricas de tiempo */}
+                      <MetricasTiempo
+                        asignadoEl={ruta.asignadoEl}
+                        fechaInicio={ruta.fechaInicio}
+                        fechaFinalizacion={ruta.fechaFinalizacion}
+                        despachos={ruta.despachos as any[]}
+                      />
 
-                    <h4 className="text-sm font-semibold text-gray-700 mb-3 mt-4">
-                      Despachos de esta ruta ({ruta.despachos.length})
-                    </h4>
-                    <div className="space-y-2">
-                      {ruta.despachos.map((despacho: any) => {
-                        const isDespachoObject = typeof despacho === 'object' && despacho !== null;
-                        if (!isDespachoObject) return null;
+                      <h4 className="text-xs sm:text-sm font-semibold text-gray-700 mb-3 mt-4">
+                        Despachos de esta ruta ({ruta.despachos.length})
+                      </h4>
+                      <div className="space-y-2">
+                        {ruta.despachos.map((despacho: any) => {
+                          const isDespachoObject =
+                            typeof despacho === "object" && despacho !== null;
+                          if (!isDespachoObject) return null;
 
-                        return (
-                          <div
-                            key={despacho._id}
-                            className="bg-gray-50 rounded-lg p-4 flex items-start justify-between"
-                          >
-                            <div className="flex-1">
-                              <div className="flex items-center gap-3 mb-2">
-                                <p className="font-semibold text-gray-900">
-                                  Folio: {despacho.FolioNum}
-                                </p>
-                                <span
-                                  className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                                    despacho.estado === "entregado"
-                                      ? "bg-green-100 text-green-800"
-                                      : despacho.estado === "asignado"
-                                      ? "bg-blue-100 text-blue-800"
-                                      : "bg-yellow-100 text-yellow-800"
-                                  }`}
-                                >
-                                  {despacho.estado.toUpperCase()}
-                                </span>
-                              </div>
-                              <p className="text-sm text-gray-700">
-                                <span className="font-medium">Cliente:</span> {despacho.CardName}
-                              </p>
-                              <p className="text-sm text-gray-600">
-                                <span className="font-medium">Dirección:</span> {despacho.Address2}
-                              </p>
-                              {/* Mostrar datos de entrega si existen */}
-                              {despacho.estado === "entregado" && despacho.entrega && (
-                                <div className="mt-2 pt-2 border-t border-gray-200">
-                                  <p className="text-xs text-gray-500">Datos de entrega:</p>
-                                  {despacho.entrega.receptorNombre && (
-                                    <p className="text-xs text-gray-700">
-                                      Receptor: {despacho.entrega.receptorNombre} {despacho.entrega.receptorApellido}
-                                    </p>
-                                  )}
-                                  {despacho.entrega.receptorRut && (
-                                    <p className="text-xs text-gray-700">
-                                      RUT: {formatRut(despacho.entrega.receptorRut)}
-                                    </p>
-                                  )}
+                          return (
+                            <div
+                              key={despacho._id}
+                              className="bg-gray-50 rounded-lg p-3 sm:p-4 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3"
+                            >
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 sm:gap-3 mb-2 flex-wrap">
+                                  <p className="text-xs sm:text-sm font-semibold text-gray-900">
+                                    Folio: {despacho.FolioNum}
+                                  </p>
+                                  <span
+                                    className={`px-2 py-1 text-xs font-semibold rounded-full whitespace-nowrap ${
+                                      despacho.estado === "entregado"
+                                        ? "bg-green-100 text-green-800"
+                                        : despacho.estado === "asignado"
+                                        ? "bg-blue-100 text-blue-800"
+                                        : "bg-yellow-100 text-yellow-800"
+                                    }`}
+                                  >
+                                    {despacho.estado.toUpperCase()}
+                                  </span>
                                 </div>
-                              )}
+                                <p className="text-xs sm:text-sm text-gray-700 truncate">
+                                  <span className="font-medium">Cliente:</span>{" "}
+                                  {despacho.CardName}
+                                </p>
+                                <p className="text-xs sm:text-sm text-gray-600 line-clamp-2">
+                                  <span className="font-medium">
+                                    Dirección:
+                                  </span>{" "}
+                                  {despacho.Address2}
+                                </p>
+                                {/* Mostrar datos de entrega si existen */}
+                                {despacho.estado === "entregado" &&
+                                  despacho.entrega && (
+                                    <div className="mt-2 pt-2 border-t border-gray-200">
+                                      <p className="text-xs text-gray-500">
+                                        Datos de entrega:
+                                      </p>
+                                      {despacho.entrega.receptorNombre && (
+                                        <p className="text-xs text-gray-700 truncate">
+                                          Receptor:{" "}
+                                          {despacho.entrega.receptorNombre}{" "}
+                                          {despacho.entrega.receptorApellido}
+                                        </p>
+                                      )}
+                                      {despacho.entrega.receptorRut && (
+                                        <p className="text-xs text-gray-700">
+                                          RUT:{" "}
+                                          {formatRut(
+                                            despacho.entrega.receptorRut
+                                          )}
+                                        </p>
+                                      )}
+                                    </div>
+                                  )}
+                              </div>
+                              <div className="flex sm:flex-col gap-2 w-full sm:w-auto">
+                                {despacho.estado !== "entregado" && (
+                                  <Button
+                                    onClick={() =>
+                                      handleMarcarEntregado(
+                                        despacho._id,
+                                        despacho.FolioNum
+                                      )
+                                    }
+                                    variant="primary"
+                                    size="sm"
+                                    fullWidth
+                                    className="sm:w-auto text-xs sm:text-sm"
+                                    disabled={entregando === despacho._id}
+                                  >
+                                    {entregando === despacho._id
+                                      ? "Marcando..."
+                                      : "Marcar Entregado"}
+                                  </Button>
+                                )}
+                                {despacho.estado === "entregado" && (
+                                  <Button
+                                    onClick={() =>
+                                      handleOpenDatosModal(despacho)
+                                    }
+                                    variant="secondary"
+                                    size="sm"
+                                    fullWidth
+                                    className="sm:w-auto text-xs sm:text-sm"
+                                  >
+                                    {despacho.entrega?.receptorNombre
+                                      ? "Editar Datos"
+                                      : "Agregar Datos"}
+                                  </Button>
+                                )}
+                              </div>
                             </div>
-                            <div className="flex flex-col gap-2">
-                              {despacho.estado !== "entregado" && (
-                                <Button
-                                  onClick={() => handleMarcarEntregado(despacho._id, despacho.FolioNum)}
-                                  variant="primary"
-                                  size="sm"
-                                  disabled={entregando === despacho._id}
-                                >
-                                  {entregando === despacho._id ? "Marcando..." : "Marcar Entregado"}
-                                </Button>
-                              )}
-                              {despacho.estado === "entregado" && (
-                                <Button
-                                  onClick={() => handleOpenDatosModal(despacho)}
-                                  variant="secondary"
-                                  size="sm"
-                                >
-                                  {despacho.entrega?.receptorNombre ? "Editar Datos" : "Agregar Datos"}
-                                </Button>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
               </div>
             ))}
           </div>
@@ -597,7 +721,8 @@ export default function RutasPage() {
                     {despachoSeleccionado.CardName}
                   </p>
                   <p className="text-xs text-blue-600 mt-1">
-                    Estos datos se registran cuando la empresa externa envía la información de entrega
+                    Estos datos se registran cuando la empresa externa envía la
+                    información de entrega
                   </p>
                 </div>
 
