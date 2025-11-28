@@ -1,10 +1,5 @@
 import { Card } from "@/components/ui";
-
-interface DespachoConEntrega {
-  entrega?: {
-    fechaEntrega: string;
-  };
-}
+import type { DespachoConEntrega } from "@/services/rutaService";
 
 interface MetricasTiempoProps {
   asignadoEl?: Date | string;
@@ -141,14 +136,14 @@ function MetricaPrimeraEntrega({
 }) {
   const primeraEntrega = [...despachos].sort(
     (a, b) =>
-      new Date(a.entrega!.fechaEntrega).getTime() -
-      new Date(b.entrega!.fechaEntrega).getTime()
+      new Date(a.entrega?.fechaEntrega || 0).getTime() -
+      new Date(b.entrega?.fechaEntrega || 0).getTime()
   )[0];
 
-  if (!primeraEntrega) return null;
+  if (!primeraEntrega?.entrega?.fechaEntrega) return null;
 
   const minutosHastaPrimeraEntrega = Math.floor(
-    (new Date(primeraEntrega.entrega!.fechaEntrega).getTime() -
+    (new Date(primeraEntrega.entrega.fechaEntrega).getTime() -
       new Date(fechaInicio).getTime()) /
       (1000 * 60)
   );
@@ -234,14 +229,14 @@ function MetricaPromedio({
 }) {
   const ultimaEntrega = [...despachos].sort(
     (a, b) =>
-      new Date(b.entrega!.fechaEntrega).getTime() -
-      new Date(a.entrega!.fechaEntrega).getTime()
+      new Date(b.entrega?.fechaEntrega || 0).getTime() -
+      new Date(a.entrega?.fechaEntrega || 0).getTime()
   )[0];
 
-  if (!ultimaEntrega) return null;
+  if (!ultimaEntrega?.entrega?.fechaEntrega) return null;
 
   const tiempoTotal = Math.floor(
-    (new Date(ultimaEntrega.entrega!.fechaEntrega).getTime() -
+    (new Date(ultimaEntrega.entrega.fechaEntrega).getTime() -
       new Date(fechaInicio).getTime()) /
       (1000 * 60)
   );

@@ -17,7 +17,8 @@
       "Bash(git rm:*)",
       "Bash(for:*)",
       "Bash(do wc -l:*)",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(cp:*)"
     ],
     "deny": [],
     "ask": []

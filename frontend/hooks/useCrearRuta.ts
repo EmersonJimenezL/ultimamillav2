@@ -1,0 +1,90 @@
+import { useState, useEffect } from "react";
+import { empresaService, type EmpresaReparto } from "@/services/empresaService";
+import { userService, type User } from "@/services/userService";
+import { rutaService } from "@/services/rutaService";
+
+export function useCrearRuta() {
+  const [showModal, setShowModal] = useState(false);
+  const [empresas, setEmpresas] = useState<EmpresaReparto[]>([]);
+  const [choferes, setChoferes] = useState<User[]>([]);
+  const [loadingModal, setLoadingModal] = useState(false);
+  const [selectedEmpresa, setSelectedEmpresa] = useState("");
+  const [selectedChofer, setSelectedChofer] = useState("");
+  const [esChoferExterno, setEsChoferExterno] = useState(false);
+  const [creatingRuta, setCreatingRuta] = useState(false);
+
+  const openModal = async () => {
+    setShowModal(true);
+    await loadModalData();
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    setSelectedEmpresa("");
+    setSelectedChofer("");
+    setEsChoferExterno(false);
+  };
+
+  const loadModalData = async () => {
+    try {
+      setLoadingModal(true);
+      const [empresasData, choferesData] = await Promise.all([
+        empresaService.getAll(),
+        userService.getChoferes(),
+      ]);
+      setEmpresas(empresasData);
+      setChoferes(choferesData);
+    } catch (error) {
+      console.error("Error al cargar datos del modal:", error);
+    } finally {
+      setLoadingModal(false);
+    }
+  };
+
+  const crearRuta = async (despachoIds: string[]) => {
+    if (despachoIds.length === 0) {
+      throw new Error("Debes seleccionar al menos un despacho");
+    }
+
+    if (!selectedEmpresa) {
+      throw new Error("Debes seleccionar una empresa de reparto");
+    }
+
+    if (!selectedChofer) {
+      throw new Error("Debes seleccionar un conductor");
+    }
+
+    try {
+      setCreatingRuta(true);
+
+      await rutaService.create({
+        empresaReparto: selectedEmpresa,
+        conductor: selectedChofer,
+        despachos: despachoIds,
+        estado: "pendiente",
+        esChoferExterno: esChoferExterno,
+      });
+
+      return true;
+    } finally {
+      setCreatingRuta(false);
+    }
+  };
+
+  return {
+    showModal,
+    empresas,
+    choferes,
+    loadingModal,
+    selectedEmpresa,
+    setSelectedEmpresa,
+    selectedChofer,
+    setSelectedChofer,
+    esChoferExterno,
+    setEsChoferExterno,
+    creatingRuta,
+    openModal,
+    closeModal,
+    crearRuta,
+  };
+}

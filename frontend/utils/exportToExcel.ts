@@ -1,40 +1,15 @@
 import * as XLSX from "xlsx";
+import type { Ruta, DespachoConEntrega } from "@/services/rutaService";
 
-interface DespachoData {
-  FolioNum: string;
-  CardName: string;
-  Address2: string;
-  estado: string;
-  entrega?: {
-    receptorNombre?: string;
-    receptorApellido?: string;
-    receptorRut?: string;
-    fechaEntrega?: string;
-  };
-}
-
-interface RutaData {
-  _id: string;
-  numeroRuta: string;
-  empresaReparto: any;
-  conductor: string;
-  patente?: string;
-  estado: string;
-  asignadoEl: Date | string;
-  fechaInicio?: Date | string;
-  fechaFinalizacion?: Date | string;
-  tiempoTranscurrido?: number;
-  asignadoPor: string;
-  despachos: DespachoData[];
-}
-
-export function exportRutasToExcel(rutas: RutaData[]) {
+export function exportRutasToExcel(rutas: Ruta[]) {
   // Crear un array para los datos principales de las rutas
   const rutasData = rutas.map((ruta) => {
-    const totalDespachos = Array.isArray(ruta.despachos) ? ruta.despachos.length : 0;
-    const despachosEntregados = Array.isArray(ruta.despachos)
-      ? ruta.despachos.filter((d) => d.estado === "entregado").length
-      : 0;
+    // Filtrar solo despachos que sean objetos (no strings)
+    const despachos = Array.isArray(ruta.despachos)
+      ? (ruta.despachos.filter((d): d is DespachoConEntrega => typeof d === 'object' && d !== null))
+      : [];
+    const totalDespachos = despachos.length;
+    const despachosEntregados = despachos.filter((d) => d.estado === "entregado").length;
 
     // Calcular tiempo transcurrido si está iniciada
     let tiempoTranscurrido = "";

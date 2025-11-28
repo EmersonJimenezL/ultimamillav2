@@ -2,14 +2,31 @@
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
+export interface DespachoConEntrega {
+  _id: string;
+  FolioNum: number;
+  CardName: string;
+  CardCode: string;
+  Address2: string;
+  Comments?: string;
+  estado: string;
+  entrega?: {
+    receptorNombre?: string;
+    receptorApellido?: string;
+    receptorRut?: string;
+    fechaEntrega?: string;
+    fotoEntrega?: string;
+  };
+}
+
 export interface Ruta {
   _id: string;
   numeroRuta?: string; // Generado automáticamente por el backend
-  empresaReparto: string;
+  empresaReparto: string | { _id: string; razonSocial: string; nombre: string };
   conductor: string;
   patente?: string; // Opcional: se completa cuando el chofer inicia la ruta
   esChoferExterno?: boolean; // Indica si el chofer es externo
-  despachos: string[];
+  despachos: string[] | DespachoConEntrega[];
   asignadoPor: string;
   estado: "iniciada" | "pausada" | "pendiente" | "finalizada" | "cancelada";
   asignadoEl: Date;

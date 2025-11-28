@@ -51,7 +51,7 @@ export function useRutas() {
 
   const handleMarcarEntregado = async (
     despachoId: string,
-    folioNum: string
+    folioNum: string | number
   ) => {
     if (
       !confirm(`¿Marcar el despacho ${folioNum} como entregado?
