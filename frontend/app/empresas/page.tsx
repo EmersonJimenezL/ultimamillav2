@@ -3,11 +3,12 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { empresaService, type EmpresaReparto } from "@/services/empresaService";
-import { Button, PageNavigation } from "@/components/ui";
+import { Button } from "@/components/ui";
 import { useRouter } from "next/navigation";
+import { NavBar } from "@/components/layout";
 
 export default function EmpresasPage() {
-  const { user, logout, isLoading: authLoading } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const [empresas, setEmpresas] = useState<EmpresaReparto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -60,11 +61,6 @@ export default function EmpresasPage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleLogout = () => {
-    logout();
-    router.push("/");
   };
 
   const handleOpenCreate = () => {
@@ -155,40 +151,21 @@ export default function EmpresasPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
-      <div className="max-w-7xl mx-auto ">
-        <PageNavigation
-          title="Gestión de Empresas de Reparto"
-          description={`${empresas.length} empresa${
-            empresas.length !== 1 ? "s" : ""
-          } registrada${empresas.length !== 1 ? "s" : ""}`}
-          currentPage="empresas"
-          userInfo={
-            user
-              ? {
-                  nombre: `${user.pnombre} ${user.papellido}`,
-                  rol: user.rol.join(", "),
-                }
-              : undefined
-          }
-          actions={
-            <>
-              <Button
-                onClick={() => router.push("/dashboard")}
-                variant="secondary"
-                size="sm"
-              >
-                ← Volver
-              </Button>
-              <Button onClick={handleOpenCreate} variant="primary" size="sm">
-                Nueva Empresa
-              </Button>
-              <Button onClick={handleLogout} variant="danger" size="sm">
-                Cerrar Sesión
-              </Button>
-            </>
-          }
-        />
+    <div className="min-h-screen bg-gray-50">
+      <NavBar
+        title="Gestión de Empresas de Reparto"
+        description={`${empresas.length} empresa${
+          empresas.length !== 1 ? "s" : ""
+        } registrada${empresas.length !== 1 ? "s" : ""}`}
+        currentPage="empresas"
+      />
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="mb-6">
+          <Button onClick={handleOpenCreate} variant="primary" size="sm">
+            ➕ Nueva Empresa
+          </Button>
+        </div>
 
         {/* Error */}
         {error && !showModal && (
