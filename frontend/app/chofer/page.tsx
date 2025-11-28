@@ -225,7 +225,7 @@ export default function ChoferPage() {
                       {/* Badge "RUTA ACTIVA" con animación */}
                       {isRutaActiva && (
                         <div className="mb-3 md:mb-4 relative overflow-hidden rounded-lg">
-                          <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-3 md:px-4 py-2 md:py-2.5 font-bold text-xs sm:text-sm md:text-base flex items-center justify-center gap-2 shadow-md">
+                          <div className="bg-linear-to-r from-orange-500 to-orange-600 text-white px-3 md:px-4 py-2 md:py-2.5 font-bold text-xs sm:text-sm md:text-base flex items-center justify-center gap-2 shadow-md">
                             <span className="animate-pulse text-sm md:text-base">
                               🔥
                             </span>
@@ -350,7 +350,7 @@ export default function ChoferPage() {
                             variant="primary"
                             size="md"
                             fullWidth
-                            className="text-sm md:text-base font-semibold py-2.5 md:py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all"
+                            className="text-sm md:text-base font-semibold py-2.5 md:py-3 bg-linear-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all"
                           >
                             🚀 Iniciar Ruta
                           </Button>
@@ -363,7 +363,7 @@ export default function ChoferPage() {
                             variant="primary"
                             size="md"
                             fullWidth
-                            className="text-sm md:text-base font-semibold py-2.5 md:py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all"
+                            className="text-sm md:text-base font-semibold py-2.5 md:py-3 bg-linear-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all"
                           >
                             📍 Ver Despachos
                           </Button>

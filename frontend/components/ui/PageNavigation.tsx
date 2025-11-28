@@ -64,17 +64,17 @@ export function PageNavigation({
 
         {/* Distintivo de usuario */}
         {userInfo && (
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-orange-50 to-orange-100 border border-orange-200 rounded-lg">
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-linear-to-r from-orange-50 to-orange-100 border border-orange-200 rounded-lg">
             <span className="text-lg">👤</span>
             <div className="flex flex-col">
               <span className="text-xs sm:text-sm font-semibold text-orange-900 leading-tight">
                 {userInfo.nombre}
               </span>
-              {userInfo.rol && (
+              {/* {userInfo.rol && (
                 <span className="text-xs text-orange-600 leading-tight">
                   {userInfo.rol}
                 </span>
-              )}
+              )} */}
             </div>
           </div>
         )}
@@ -83,10 +83,18 @@ export function PageNavigation({
       {/* Header con título y acciones */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-2">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{title}</h1>
-          {description && <p className="text-gray-600 mt-1 text-sm sm:text-base">{description}</p>}
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+            {title}
+          </h1>
+          {description && (
+            <p className="text-gray-600 mt-1 text-sm sm:text-base">
+              {description}
+            </p>
+          )}
         </div>
-        {actions && <div className="flex flex-wrap gap-2 sm:gap-3">{actions}</div>}
+        {actions && (
+          <div className="flex flex-wrap gap-2 sm:gap-3">{actions}</div>
+        )}
       </div>
     </div>
   );

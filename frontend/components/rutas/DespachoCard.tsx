@@ -97,7 +97,7 @@ export function DespachoCard({
           variant="primary"
           size="md"
           fullWidth
-          className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-sm md:text-base font-semibold py-2.5 md:py-3 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all"
+          className="bg-linear-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-sm md:text-base font-semibold py-2.5 md:py-3 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all"
         >
           📦 Entregar Despacho
         </Button>

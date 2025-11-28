@@ -162,7 +162,7 @@ export default function RutaDetallePage() {
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2.5 md:h-3 mb-3">
                 <div
-                  className="bg-gradient-to-r from-orange-500 to-orange-600 h-2.5 md:h-3 rounded-full transition-all duration-500 shadow-sm"
+                  className="bg-linear-to-r from-orange-500 to-orange-600 h-2.5 md:h-3 rounded-full transition-all duration-500 shadow-sm"
                   style={{
                     width: `${
                       totalDespachos > 0
@@ -228,7 +228,7 @@ export default function RutaDetallePage() {
                   variant="primary"
                   size="lg"
                   fullWidth
-                  className="!bg-gradient-to-r !from-green-500 !to-green-600 hover:!from-green-600 hover:!to-green-700 text-sm md:text-base font-semibold py-3 md:py-4 shadow-lg"
+                  className="!bg-linear-to-r !from-green-500 !to-green-600 hover:!from-green-600 hover:!to-green-700 text-sm md:text-base font-semibold py-3 md:py-4 shadow-lg"
                 >
                   ✓ Finalizar Ruta
                 </Button>

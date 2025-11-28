@@ -100,17 +100,12 @@ export default function DashboardPage() {
               <div className="flex items-center gap-3">
                 {/* Distintivo de usuario */}
                 {user && (
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-orange-50 to-orange-100 border border-orange-200 rounded-lg">
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-linear-to-r from-orange-50 to-orange-100 border border-orange-200 rounded-lg">
                     <span className="text-lg">👤</span>
                     <div className="flex flex-col">
                       <span className="text-xs sm:text-sm font-semibold text-orange-900 leading-tight">
                         {user.pnombre} {user.papellido}
                       </span>
-                      {user.rol && user.rol.length > 0 && (
-                        <span className="text-xs text-orange-600 leading-tight">
-                          {user.rol.join(", ")}
-                        </span>
-                      )}
                     </div>
                   </div>
                 )}

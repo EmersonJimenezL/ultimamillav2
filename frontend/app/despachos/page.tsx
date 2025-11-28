@@ -78,7 +78,9 @@ export default function DespachosPage() {
   const handleCrearRuta = async () => {
     try {
       await crearRuta(selectedDespachos);
-      alert(`Ruta creada exitosamente con ${selectedDespachos.length} despachos`);
+      alert(
+        `Ruta creada exitosamente con ${selectedDespachos.length} despachos`
+      );
       closeModal();
       setSelectedDespachos([]);
       await loadDespachos();
@@ -102,41 +104,37 @@ export default function DespachosPage() {
                 </p>
               </div>
               <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 rounded-lg border border-blue-200 transition-all hover:shadow-md">
-                  <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-sm animate-pulse">
-                    {user?.pnombre?.[0]}
-                    {user?.papellido?.[0]}
+                {user && (
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-linear-to-r from-orange-50 to-orange-100 border border-orange-200 rounded-lg">
+                    <span className="text-lg">👤</span>
+                    <div className="flex flex-col">
+                      <span className="text-xs sm:text-sm font-semibold text-orange-900 leading-tight">
+                        {user.pnombre} {user.papellido}
+                      </span>
+                    </div>
                   </div>
-                  <div className="text-sm">
-                    <p className="font-semibold text-gray-900">
-                      {user?.pnombre} {user?.papellido}
-                    </p>
-                    <p className="text-xs text-gray-600">
-                      {user?.rol.join(", ")}
-                    </p>
-                  </div>
-                </div>
+                )}
                 <button
                   onClick={() => router.push("/rutas")}
-                  className="px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white font-semibold rounded-lg shadow-md hover:shadow-lg hover:scale-105 transform transition-all duration-200 hover:from-purple-600 hover:to-purple-700 active:scale-95"
+                  className="px-4 py-2 bg-linear-to-r from-purple-500 to-purple-600 text-white font-semibold rounded-lg shadow-md hover:shadow-lg hover:scale-105 transform transition-all duration-200 hover:from-purple-600 hover:to-purple-700 active:scale-95"
                 >
                   🚚 Rutas
                 </button>
                 <button
                   onClick={() => router.push("/empresas")}
-                  className="px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold rounded-lg shadow-md hover:shadow-lg hover:scale-105 transform transition-all duration-200 hover:from-green-600 hover:to-green-700 active:scale-95"
+                  className="px-4 py-2 bg-linear-to-r from-green-500 to-green-600 text-white font-semibold rounded-lg shadow-md hover:shadow-lg hover:scale-105 transform transition-all duration-200 hover:from-green-600 hover:to-green-700 active:scale-95"
                 >
                   🏢 Empresas
                 </button>
                 <button
                   onClick={() => router.push("/dashboard")}
-                  className="px-4 py-2 bg-gradient-to-r from-gray-500 to-gray-600 text-white font-semibold rounded-lg shadow-md hover:shadow-lg hover:scale-105 transform transition-all duration-200 hover:from-gray-600 hover:to-gray-700 active:scale-95"
+                  className="px-4 py-2 bg-linear-to-r from-gray-500 to-gray-600 text-white font-semibold rounded-lg shadow-md hover:shadow-lg hover:scale-105 transform transition-all duration-200 hover:from-gray-600 hover:to-gray-700 active:scale-95"
                 >
                   ← Volver
                 </button>
                 <button
                   onClick={handleLogout}
-                  className="px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white font-semibold rounded-lg shadow-md hover:shadow-lg hover:scale-105 transform transition-all duration-200 hover:from-red-600 hover:to-red-700 active:scale-95"
+                  className="px-4 py-2 bg-linear-to-r from-red-500 to-red-600 text-white font-semibold rounded-lg shadow-md hover:shadow-lg hover:scale-105 transform transition-all duration-200 hover:from-red-600 hover:to-red-700 active:scale-95"
                 >
                   🚪 Salir
                 </button>
@@ -186,7 +184,11 @@ export default function DespachosPage() {
               className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
             >
               <option value="todos">
-                Todos ({estadoCounts.pendiente + estadoCounts.entregado + estadoCounts.cancelado})
+                Todos (
+                {estadoCounts.pendiente +
+                  estadoCounts.entregado +
+                  estadoCounts.cancelado}
+                )
               </option>
               <option value="pendiente">
                 Pendientes ({estadoCounts.pendiente})
@@ -222,7 +224,9 @@ export default function DespachosPage() {
           ) : despachosPaginados.length === 0 ? (
             <div className="text-center py-12 bg-white rounded-lg shadow-sm">
               <div className="text-6xl mb-4">📭</div>
-              <p className="text-gray-500 text-lg">No hay despachos disponibles</p>
+              <p className="text-gray-500 text-lg">
+                No hay despachos disponibles
+              </p>
             </div>
           ) : (
             <>
