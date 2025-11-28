@@ -133,8 +133,8 @@ export default function RutasPage() {
               </p>
             </div>
             <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 rounded-lg border border-blue-200">
-                <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-sm">
+              <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 rounded-lg border border-blue-200 transition-all hover:shadow-md">
+                <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-sm animate-pulse">
                   {user?.pnombre?.[0]}
                   {user?.papellido?.[0]}
                 </div>
@@ -147,9 +147,30 @@ export default function RutasPage() {
                   </p>
                 </div>
               </div>
-              <Button onClick={handleLogout} variant="secondary" size="sm">
-                Cerrar Sesión
-              </Button>
+              <button
+                onClick={() => router.push("/despachos")}
+                className="px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold rounded-lg shadow-md hover:shadow-lg hover:scale-105 transform transition-all duration-200 hover:from-orange-600 hover:to-orange-700 active:scale-95"
+              >
+                📦 Despachos
+              </button>
+              <button
+                onClick={() => router.push("/empresas")}
+                className="px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold rounded-lg shadow-md hover:shadow-lg hover:scale-105 transform transition-all duration-200 hover:from-green-600 hover:to-green-700 active:scale-95"
+              >
+                🏢 Empresas
+              </button>
+              <button
+                onClick={() => router.push("/dashboard")}
+                className="px-4 py-2 bg-gradient-to-r from-gray-500 to-gray-600 text-white font-semibold rounded-lg shadow-md hover:shadow-lg hover:scale-105 transform transition-all duration-200 hover:from-gray-600 hover:to-gray-700 active:scale-95"
+              >
+                ← Volver
+              </button>
+              <button
+                onClick={handleLogout}
+                className="px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white font-semibold rounded-lg shadow-md hover:shadow-lg hover:scale-105 transform transition-all duration-200 hover:from-red-600 hover:to-red-700 active:scale-95"
+              >
+                🚪 Cerrar sesión
+              </button>
             </div>
           </div>
         </div>
@@ -170,27 +191,14 @@ export default function RutasPage() {
 
         <div className="mb-6 flex flex-wrap gap-3">
           <Button
-            onClick={() => router.push("/rutas/crear")}
-            variant="primary"
-            size="md"
-          >
-            ➕ Nueva Ruta
-          </Button>
-          <Button
-            onClick={loadRutas}
-            variant="secondary"
-            size="md"
-            disabled={loading}
-          >
-            🔄 Actualizar
-          </Button>
-          <Button
             onClick={handleExportarExcel}
-            variant="secondary"
-            size="md"
+            variant="primary"
+            size="sm"
             disabled={rutasFiltradas.length === 0}
+            className="text-xs sm:text-sm whitespace-nowrap"
           >
-            📊 Exportar a Excel
+            <span className="hidden sm:inline">📊 Exportar a Excel</span>
+            <span className="sm:hidden">📊 Excel</span>
           </Button>
         </div>
 

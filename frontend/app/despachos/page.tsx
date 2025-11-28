@@ -102,8 +102,8 @@ export default function DespachosPage() {
                 </p>
               </div>
               <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 rounded-lg border border-blue-200">
-                  <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-sm">
+                <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 rounded-lg border border-blue-200 transition-all hover:shadow-md">
+                  <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-sm animate-pulse">
                     {user?.pnombre?.[0]}
                     {user?.papellido?.[0]}
                   </div>
@@ -116,9 +116,30 @@ export default function DespachosPage() {
                     </p>
                   </div>
                 </div>
-                <Button onClick={handleLogout} variant="secondary" size="sm">
-                  Cerrar Sesión
-                </Button>
+                <button
+                  onClick={() => router.push("/rutas")}
+                  className="px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white font-semibold rounded-lg shadow-md hover:shadow-lg hover:scale-105 transform transition-all duration-200 hover:from-purple-600 hover:to-purple-700 active:scale-95"
+                >
+                  🚚 Rutas
+                </button>
+                <button
+                  onClick={() => router.push("/empresas")}
+                  className="px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold rounded-lg shadow-md hover:shadow-lg hover:scale-105 transform transition-all duration-200 hover:from-green-600 hover:to-green-700 active:scale-95"
+                >
+                  🏢 Empresas
+                </button>
+                <button
+                  onClick={() => router.push("/dashboard")}
+                  className="px-4 py-2 bg-gradient-to-r from-gray-500 to-gray-600 text-white font-semibold rounded-lg shadow-md hover:shadow-lg hover:scale-105 transform transition-all duration-200 hover:from-gray-600 hover:to-gray-700 active:scale-95"
+                >
+                  ← Volver
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white font-semibold rounded-lg shadow-md hover:shadow-lg hover:scale-105 transform transition-all duration-200 hover:from-red-600 hover:to-red-700 active:scale-95"
+                >
+                  🚪 Salir
+                </button>
               </div>
             </div>
           </div>
@@ -140,14 +161,6 @@ export default function DespachosPage() {
               disabled={selectedDespachos.length === 0}
             >
               ➕ Crear Ruta ({selectedDespachos.length})
-            </Button>
-            <Button
-              onClick={handleSync}
-              variant="secondary"
-              size="md"
-              disabled={syncing}
-            >
-              {syncing ? "Sincronizando..." : "🔄 Sincronizar SAP"}
             </Button>
             <Button
               onClick={loadDespachos}
