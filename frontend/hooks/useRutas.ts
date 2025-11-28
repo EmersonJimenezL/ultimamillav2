@@ -63,7 +63,7 @@ Nota: Podrás agregar los datos del receptor después.`)
 
     try {
       setEntregando(despachoId);
-      await despachoService.marcarEntregado(despachoId);
+      await despachoService.marcarComoEntregado(despachoId);
       alert(`Despacho ${folioNum} marcado como entregado`);
       await loadRutas();
     } catch (err: any) {

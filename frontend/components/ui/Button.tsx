@@ -30,8 +30,7 @@ export function Button({
       "bg-gradient-to-r from-orange-400 via-orange-500 to-red-500 text-white shadow-lg hover:shadow-2xl hover:from-orange-500 hover:via-orange-600 hover:to-red-600 transform hover:scale-105 transition-all",
     secondary:
       "bg-gray-200 text-gray-900 shadow hover:bg-gray-300 border border-gray-300",
-    outline:
-      "border-2 border-orange-500 text-gray-900 hover:bg-orange-50",
+    outline: "border-2 border-orange-500 text-gray-900 hover:bg-orange-50",
     ghost: "text-gray-900 hover:bg-gray-100",
     danger:
       "bg-gradient-to-r from-red-500 to-red-700 text-white shadow-lg hover:shadow-xl hover:from-red-600 hover:to-red-800",

@@ -1,24 +1,33 @@
-import { Button, Card } from "@/components/ui";
+import { Card, Button } from "@/components/ui";
+import { abrirEnMapa } from "@/utils/mapsUtils";
+import { formatRut } from "@/utils/rutaUtils";
 
 interface DespachoCardProps {
   despacho: any;
   index: number;
-  estadoRuta: string;
+  rutaEstado: string;
   onEntregar: (despacho: any) => void;
-  onAbrirMapa: (direccion: string) => void;
-  getEstadoBadgeColor: (estado: string) => string;
-  formatRut: (rut: string) => string;
+}
+
+function getEstadoBadgeColor(estado: string): string {
+  const colores: Record<string, string> = {
+    pendiente: "bg-yellow-100 text-yellow-800",
+    asignado: "bg-blue-100 text-blue-800",
+    entregado: "bg-green-100 text-green-800",
+    cancelado: "bg-red-100 text-red-800",
+  };
+  return colores[estado] || "bg-gray-100 text-gray-800";
 }
 
 export function DespachoCard({
   despacho,
   index,
-  estadoRuta,
+  rutaEstado,
   onEntregar,
-  onAbrirMapa,
-  getEstadoBadgeColor,
-  formatRut,
 }: DespachoCardProps) {
+  const isDespachoObject = typeof despacho === "object" && despacho !== null;
+  if (!isDespachoObject) return null;
+
   return (
     <Card
       className={`border-2 transition-all duration-300 bg-white ${
@@ -28,7 +37,7 @@ export function DespachoCard({
       }`}
       padding="md"
     >
-      {/* Header */}
+      {/* Header del despacho */}
       <div className="flex items-start justify-between gap-3 mb-3 md:mb-4">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-2">
@@ -55,7 +64,7 @@ export function DespachoCard({
         </div>
       </div>
 
-      {/* Información */}
+      {/* Información del despacho con iconos */}
       <div className="space-y-3 mb-4">
         <div className="p-2 md:p-3 bg-gray-50 rounded-lg border border-gray-200">
           <div className="flex items-center gap-2 mb-1">
@@ -77,7 +86,7 @@ export function DespachoCard({
               </p>
             </div>
             <button
-              onClick={() => onAbrirMapa(despacho.Address2)}
+              onClick={() => abrirEnMapa(despacho.Address2)}
               className="text-blue-600 hover:text-blue-700 text-xs md:text-sm font-semibold hover:underline flex items-center gap-1"
               title="Abrir en Google Maps"
             >
@@ -90,8 +99,8 @@ export function DespachoCard({
         </div>
       </div>
 
-      {/* Botón entregar */}
-      {despacho.estado !== "entregado" && estadoRuta === "iniciada" && (
+      {/* Botón de entregar con gradiente naranja */}
+      {despacho.estado !== "entregado" && rutaEstado === "iniciada" && (
         <Button
           onClick={() => onEntregar(despacho)}
           variant="primary"
@@ -103,7 +112,7 @@ export function DespachoCard({
         </Button>
       )}
 
-      {/* Info de entrega */}
+      {/* Info de entrega si está entregado */}
       {despacho.estado === "entregado" && despacho.entrega && (
         <div className="pt-3 md:pt-4 border-t-2 border-green-200 mt-3 md:mt-4 bg-green-50 -mx-4 -mb-4 px-4 pb-4 rounded-b-lg">
           <p className="text-xs md:text-sm text-green-700 font-bold mb-2 flex items-center gap-1.5">

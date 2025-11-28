@@ -1,20 +1,18 @@
 import { Card } from "@/components/ui";
+import { getEstadoBadgeColor } from "@/utils/rutaUtils";
+import type { Ruta } from "@/services/rutaService";
 
-interface InfoRutaProps {
-  estado: string;
-  patente?: string;
+interface RutaInfoProps {
+  ruta: Ruta;
   totalDespachos: number;
   despachosEntregados: number;
-  getEstadoBadgeColor: (estado: string) => string;
 }
 
-export function InfoRuta({
-  estado,
-  patente,
+export function RutaInfo({
+  ruta,
   totalDespachos,
   despachosEntregados,
-  getEstadoBadgeColor,
-}: InfoRutaProps) {
+}: RutaInfoProps) {
   return (
     <Card
       className="mb-4 md:mb-6 border-2 border-gray-200 bg-white"
@@ -25,17 +23,17 @@ export function InfoRuta({
           <p className="text-xs md:text-sm text-gray-500 mb-1">Estado</p>
           <span
             className={`inline-block px-2 md:px-3 py-1 md:py-1.5 text-xs md:text-sm font-semibold rounded-full ${getEstadoBadgeColor(
-              estado
+              ruta.estado
             )}`}
           >
-            {estado.toUpperCase()}
+            {ruta.estado.toUpperCase()}
           </span>
         </div>
-        {patente && (
+        {ruta.patente && (
           <div>
             <p className="text-xs md:text-sm text-gray-500 mb-1">Patente</p>
             <p className="font-bold text-sm md:text-base text-gray-900 uppercase">
-              {patente}
+              {ruta.patente}
             </p>
           </div>
         )}

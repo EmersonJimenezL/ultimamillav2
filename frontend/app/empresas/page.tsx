@@ -16,7 +16,9 @@ export default function EmpresasPage() {
   // Modal state
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState<"create" | "edit">("create");
-  const [empresaActual, setEmpresaActual] = useState<EmpresaReparto | null>(null);
+  const [empresaActual, setEmpresaActual] = useState<EmpresaReparto | null>(
+    null
+  );
 
   // Form state
   const [formData, setFormData] = useState({
@@ -113,7 +115,10 @@ export default function EmpresasPage() {
       await loadEmpresas();
       handleCloseModal();
     } catch (err: any) {
-      setError(err.message || `Error al ${modalMode === "create" ? "crear" : "actualizar"} empresa`);
+      setError(
+        err.message ||
+          `Error al ${modalMode === "create" ? "crear" : "actualizar"} empresa`
+      );
     } finally {
       setSubmitting(false);
     }
@@ -154,7 +159,9 @@ export default function EmpresasPage() {
       <div className="max-w-7xl mx-auto">
         <PageNavigation
           title="Gestión de Empresas de Reparto"
-          description={`${empresas.length} empresa${empresas.length !== 1 ? "s" : ""} registrada${empresas.length !== 1 ? "s" : ""}`}
+          description={`${empresas.length} empresa${
+            empresas.length !== 1 ? "s" : ""
+          } registrada${empresas.length !== 1 ? "s" : ""}`}
           currentPage="empresas"
           userInfo={
             user
@@ -194,7 +201,12 @@ export default function EmpresasPage() {
         {empresas.length === 0 ? (
           <div className="bg-white rounded-lg shadow-sm p-12 text-center">
             <p className="text-gray-500 text-lg">No hay empresas registradas</p>
-            <Button onClick={handleOpenCreate} variant="primary" size="md" className="mt-4">
+            <Button
+              onClick={handleOpenCreate}
+              variant="primary"
+              size="md"
+              className="mt-4"
+            >
               Crear Primera Empresa
             </Button>
           </div>
@@ -205,17 +217,23 @@ export default function EmpresasPage() {
                 key={empresa._id}
                 className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow"
               >
-                <h3 className="text-lg font-bold text-gray-900 mb-3">{empresa.razonSocial}</h3>
+                <h3 className="text-lg font-bold text-gray-900 mb-3">
+                  {empresa.razonSocial}
+                </h3>
 
                 <div className="space-y-2 mb-4">
                   <div>
                     <p className="text-xs text-gray-500 uppercase">RUT</p>
-                    <p className="text-sm font-medium text-gray-900">{empresa.rut}</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {empresa.rut}
+                    </p>
                   </div>
 
                   <div>
                     <p className="text-xs text-gray-500 uppercase">Contacto</p>
-                    <p className="text-sm font-medium text-gray-900">{empresa.contacto}</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {empresa.contacto}
+                    </p>
                   </div>
                 </div>
 
@@ -229,7 +247,9 @@ export default function EmpresasPage() {
                     Editar
                   </Button>
                   <Button
-                    onClick={() => handleDelete(empresa._id, empresa.razonSocial)}
+                    onClick={() =>
+                      handleDelete(empresa._id, empresa.razonSocial)
+                    }
                     variant="danger"
                     size="sm"
                     disabled={deleting === empresa._id}
@@ -265,12 +285,16 @@ export default function EmpresasPage() {
                     <input
                       type="text"
                       value={formData.rut}
-                      onChange={(e) => setFormData({ ...formData, rut: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, rut: e.target.value })
+                      }
                       placeholder="Ej: 12.345.678-9"
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                       required
                     />
-                    <p className="text-xs text-gray-500 mt-1">Formato: XX.XXX.XXX-X</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Formato: XX.XXX.XXX-X
+                    </p>
                   </div>
 
                   <div>
@@ -280,7 +304,12 @@ export default function EmpresasPage() {
                     <input
                       type="text"
                       value={formData.razonSocial}
-                      onChange={(e) => setFormData({ ...formData, razonSocial: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          razonSocial: e.target.value,
+                        })
+                      }
                       placeholder="Ej: Chilexpress S.A."
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                       required
@@ -294,12 +323,16 @@ export default function EmpresasPage() {
                     <input
                       type="text"
                       value={formData.contacto}
-                      onChange={(e) => setFormData({ ...formData, contacto: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, contacto: e.target.value })
+                      }
                       placeholder="Ej: 600 600 6000"
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                       required
                     />
-                    <p className="text-xs text-gray-500 mt-1">Teléfono o email de contacto</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Teléfono o email de contacto
+                    </p>
                   </div>
 
                   <div className="flex gap-3 pt-4">

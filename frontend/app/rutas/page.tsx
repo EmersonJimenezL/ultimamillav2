@@ -500,13 +500,18 @@ export default function RutasPage() {
                           <p className="text-sm sm:text-base font-bold text-yellow-600">
                             {(() => {
                               const ahora = new Date();
-                              const fechaRef = ruta.fechaInicio || ruta.asignadoEl;
+                              const fechaRef =
+                                ruta.fechaInicio || ruta.asignadoEl;
                               const tiempoTranscurrido = Math.floor(
-                                (ahora.getTime() - new Date(fechaRef).getTime()) / (1000 * 60)
+                                (ahora.getTime() -
+                                  new Date(fechaRef).getTime()) /
+                                  (1000 * 60)
                               );
                               const horas = Math.floor(tiempoTranscurrido / 60);
                               const minutos = tiempoTranscurrido % 60;
-                              return horas > 0 ? `${horas}h ${minutos}min` : `${minutos} min`;
+                              return horas > 0
+                                ? `${horas}h ${minutos}min`
+                                : `${minutos} min`;
                             })()}
                           </p>
                         </div>
@@ -581,9 +586,7 @@ export default function RutasPage() {
                       fullWidth
                       className="md:w-auto"
                     >
-                      {rutaExpandida === ruta._id
-                        ? "Ocultar"
-                        : "Ver Despachos"}
+                      {rutaExpandida === ruta._id ? "Ocultar" : "Ver Despachos"}
                     </Button>
                     {ruta.estado !== "finalizada" &&
                       ruta.estado !== "cancelada" && (

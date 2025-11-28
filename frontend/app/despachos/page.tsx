@@ -178,7 +178,9 @@ export default function DespachosPage() {
 
       // Si no es chofer externo, obtener el nombre del chofer seleccionado
       if (!esChoferExterno) {
-        const choferSeleccionado = choferes.find((c) => c._id === selectedChofer);
+        const choferSeleccionado = choferes.find(
+          (c) => c._id === selectedChofer
+        );
         if (!choferSeleccionado) {
           throw new Error("Chofer no encontrado");
         }
@@ -610,7 +612,11 @@ export default function DespachosPage() {
                 onClick={handleCrearRuta}
                 variant="primary"
                 size="sm"
-                disabled={!selectedEmpresa || (!esChoferExterno && !selectedChofer) || creatingRuta}
+                disabled={
+                  !selectedEmpresa ||
+                  (!esChoferExterno && !selectedChofer) ||
+                  creatingRuta
+                }
                 isLoading={creatingRuta}
               >
                 {creatingRuta ? "Creando..." : "Crear Ruta"}
@@ -673,10 +679,16 @@ export default function DespachosPage() {
                   }}
                   className="mt-0.5 h-4 w-4 text-orange-500 border-gray-300 rounded focus:ring-orange-500"
                 />
-                <label htmlFor="esChoferExterno" className="flex-1 cursor-pointer">
-                  <p className="text-sm font-medium text-blue-900">Chofer Externo</p>
+                <label
+                  htmlFor="esChoferExterno"
+                  className="flex-1 cursor-pointer"
+                >
+                  <p className="text-sm font-medium text-blue-900">
+                    Chofer Externo
+                  </p>
                   <p className="text-xs text-blue-700 mt-1">
-                    Marcar si el chofer no está registrado en el sistema. Los datos del chofer se solicitarán cuando inicie la ruta.
+                    Marcar si el chofer no está registrado en el sistema. Los
+                    datos del chofer se solicitarán cuando inicie la ruta.
                   </p>
                 </label>
               </div>

@@ -37,5 +37,9 @@ export function Card({
   const cardClasses =
     `${baseStyles} ${paddings[padding]} ${shadows[shadow]} ${className}`.trim();
 
-  return <div className={cardClasses} {...props}>{children}</div>;
+  return (
+    <div className={cardClasses} {...props}>
+      {children}
+    </div>
+  );
 }

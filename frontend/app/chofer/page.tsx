@@ -202,142 +202,192 @@ export default function ChoferPage() {
                 </p>
               </Card>
             ) : (
-            <div className="space-y-3 md:space-y-4 lg:grid lg:grid-cols-2 xl:grid-cols-3 lg:gap-4 xl:gap-5 lg:space-y-0">
-              {rutas.map((ruta) => {
-                const isRutaActiva = ruta.estado === "iniciada";
-                const isPendiente = ruta.estado === "pendiente";
-                const isFinalizada = ruta.estado === "finalizada";
+              <div className="space-y-3 md:space-y-4 lg:grid lg:grid-cols-2 xl:grid-cols-3 lg:gap-4 xl:gap-5 lg:space-y-0">
+                {rutas.map((ruta) => {
+                  const isRutaActiva = ruta.estado === "iniciada";
+                  const isPendiente = ruta.estado === "pendiente";
+                  const isFinalizada = ruta.estado === "finalizada";
 
-                return (
-                  <Card
-                    key={ruta._id}
-                    className={`border-2 transition-all duration-300 bg-white ${
-                      isRutaActiva
-                        ? "border-orange-400 shadow-lg hover:shadow-2xl ring-2 ring-orange-200"
-                        : isPendiente
-                        ? "border-blue-300 shadow-md hover:shadow-lg hover:border-blue-400"
-                        : isFinalizada
-                        ? "border-green-300 shadow-md hover:shadow-lg hover:border-green-400"
-                        : "border-gray-300 shadow-md hover:shadow-lg hover:border-gray-400"
-                    }`}
-                    padding="md"
-                  >
-                    {/* Badge "RUTA ACTIVA" con animación */}
-                    {isRutaActiva && (
-                      <div className="mb-3 md:mb-4 relative overflow-hidden rounded-lg">
-                        <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-3 md:px-4 py-2 md:py-2.5 font-bold text-xs sm:text-sm md:text-base flex items-center justify-center gap-2 shadow-md">
-                          <span className="animate-pulse text-sm md:text-base">🔥</span>
-                          RUTA ACTIVA
-                          <span className="animate-pulse text-sm md:text-base">🔥</span>
+                  return (
+                    <Card
+                      key={ruta._id}
+                      className={`border-2 transition-all duration-300 bg-white ${
+                        isRutaActiva
+                          ? "border-orange-400 shadow-lg hover:shadow-2xl ring-2 ring-orange-200"
+                          : isPendiente
+                          ? "border-blue-300 shadow-md hover:shadow-lg hover:border-blue-400"
+                          : isFinalizada
+                          ? "border-green-300 shadow-md hover:shadow-lg hover:border-green-400"
+                          : "border-gray-300 shadow-md hover:shadow-lg hover:border-gray-400"
+                      }`}
+                      padding="md"
+                    >
+                      {/* Badge "RUTA ACTIVA" con animación */}
+                      {isRutaActiva && (
+                        <div className="mb-3 md:mb-4 relative overflow-hidden rounded-lg">
+                          <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-3 md:px-4 py-2 md:py-2.5 font-bold text-xs sm:text-sm md:text-base flex items-center justify-center gap-2 shadow-md">
+                            <span className="animate-pulse text-sm md:text-base">
+                              🔥
+                            </span>
+                            RUTA ACTIVA
+                            <span className="animate-pulse text-sm md:text-base">
+                              🔥
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
 
-                    {/* Header de la ruta con iconos */}
-                    <div className="flex items-start justify-between gap-3 md:gap-4 mb-3 md:mb-4">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xl md:text-2xl">
-                            {isRutaActiva ? "🚚" : isPendiente ? "⏳" : isFinalizada ? "✅" : "📋"}
+                      {/* Header de la ruta con iconos */}
+                      <div className="flex items-start justify-between gap-3 md:gap-4 mb-3 md:mb-4">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xl md:text-2xl">
+                              {isRutaActiva
+                                ? "🚚"
+                                : isPendiente
+                                ? "⏳"
+                                : isFinalizada
+                                ? "✅"
+                                : "📋"}
+                            </span>
+                            <h3
+                              className={`text-base sm:text-lg md:text-xl font-bold truncate ${
+                                isRutaActiva
+                                  ? "text-orange-900"
+                                  : isPendiente
+                                  ? "text-blue-900"
+                                  : isFinalizada
+                                  ? "text-green-900"
+                                  : "text-gray-900"
+                              }`}
+                            >
+                              {ruta.numeroRuta || `Ruta ${ruta._id.slice(-6)}`}
+                            </h3>
+                          </div>
+                          <span
+                            className={`inline-block px-2 md:px-3 py-1 md:py-1.5 text-xs md:text-sm font-semibold rounded-full mt-2 ${getEstadoBadgeColor(
+                              ruta.estado
+                            )}`}
+                          >
+                            {ruta.estado.toUpperCase()}
                           </span>
-                          <h3 className={`text-base sm:text-lg md:text-xl font-bold truncate ${
-                            isRutaActiva ? "text-orange-900" : isPendiente ? "text-blue-900" : isFinalizada ? "text-green-900" : "text-gray-900"
-                          }`}>
-                            {ruta.numeroRuta || `Ruta ${ruta._id.slice(-6)}`}
-                          </h3>
                         </div>
-                        <span
-                          className={`inline-block px-2 md:px-3 py-1 md:py-1.5 text-xs md:text-sm font-semibold rounded-full mt-2 ${getEstadoBadgeColor(
-                            ruta.estado
-                          )}`}
+                      </div>
+
+                      {/* Información de la ruta - Grid con fondo sutil */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-3 mb-4">
+                        <div className="p-3 rounded-lg bg-gray-50 border border-gray-200">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-base">📦</span>
+                            <p className="text-xs md:text-sm text-gray-600 font-medium">
+                              Despachos
+                            </p>
+                          </div>
+                          <p
+                            className={`text-base md:text-lg lg:text-xl font-bold ${
+                              isRutaActiva ? "text-orange-600" : "text-gray-900"
+                            }`}
+                          >
+                            {Array.isArray(ruta.despachos)
+                              ? ruta.despachos.length
+                              : 0}
+                          </p>
+                        </div>
+
+                        {ruta.patente && (
+                          <div className="p-3 rounded-lg bg-gray-50 border border-gray-200">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-base">🚗</span>
+                              <p className="text-xs md:text-sm text-gray-600 font-medium">
+                                Patente
+                              </p>
+                            </div>
+                            <p
+                              className={`text-base md:text-lg font-bold uppercase ${
+                                isRutaActiva
+                                  ? "text-orange-600"
+                                  : "text-gray-900"
+                              }`}
+                            >
+                              {ruta.patente}
+                            </p>
+                          </div>
+                        )}
+
+                        <div
+                          className={`p-3 rounded-lg bg-gray-50 border border-gray-200 ${
+                            !ruta.patente
+                              ? "sm:col-span-2 lg:col-span-1 xl:col-span-2"
+                              : ""
+                          }`}
                         >
-                          {ruta.estado.toUpperCase()}
-                        </span>
-                      </div>
-                    </div>
-
-                  {/* Información de la ruta - Grid con fondo sutil */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-3 mb-4">
-                    <div className="p-3 rounded-lg bg-gray-50 border border-gray-200">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-base">📦</span>
-                        <p className="text-xs md:text-sm text-gray-600 font-medium">Despachos</p>
-                      </div>
-                      <p className={`text-base md:text-lg lg:text-xl font-bold ${isRutaActiva ? "text-orange-600" : "text-gray-900"}`}>
-                        {Array.isArray(ruta.despachos) ? ruta.despachos.length : 0}
-                      </p>
-                    </div>
-
-                    {ruta.patente && (
-                      <div className="p-3 rounded-lg bg-gray-50 border border-gray-200">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-base">🚗</span>
-                          <p className="text-xs md:text-sm text-gray-600 font-medium">Patente</p>
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-base">📅</span>
+                            <p className="text-xs md:text-sm text-gray-600 font-medium">
+                              Asignada
+                            </p>
+                          </div>
+                          <p className="text-xs md:text-sm font-semibold text-gray-900">
+                            {new Date(ruta.asignadoEl).toLocaleDateString(
+                              "es-CL",
+                              {
+                                day: "numeric",
+                                month: "short",
+                                year: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              }
+                            )}
+                          </p>
                         </div>
-                        <p className={`text-base md:text-lg font-bold uppercase ${isRutaActiva ? "text-orange-600" : "text-gray-900"}`}>
-                          {ruta.patente}
-                        </p>
                       </div>
-                    )}
 
-                    <div className={`p-3 rounded-lg bg-gray-50 border border-gray-200 ${!ruta.patente ? "sm:col-span-2 lg:col-span-1 xl:col-span-2" : ""}`}>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-base">📅</span>
-                        <p className="text-xs md:text-sm text-gray-600 font-medium">Asignada</p>
+                      {/* Acciones - Botones con naranja como color principal */}
+                      <div className="flex flex-col sm:flex-row gap-2 md:gap-3">
+                        {ruta.estado === "pendiente" && (
+                          <Button
+                            onClick={() => handleOpenIniciarModal(ruta)}
+                            variant="primary"
+                            size="md"
+                            fullWidth
+                            className="text-sm md:text-base font-semibold py-2.5 md:py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all"
+                          >
+                            🚀 Iniciar Ruta
+                          </Button>
+                        )}
+                        {ruta.estado === "iniciada" && (
+                          <Button
+                            onClick={() =>
+                              router.push(`/chofer/ruta/${ruta._id}`)
+                            }
+                            variant="primary"
+                            size="md"
+                            fullWidth
+                            className="text-sm md:text-base font-semibold py-2.5 md:py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all"
+                          >
+                            📍 Ver Despachos
+                          </Button>
+                        )}
+                        {(ruta.estado === "finalizada" ||
+                          ruta.estado === "cancelada") && (
+                          <Button
+                            onClick={() =>
+                              router.push(`/chofer/ruta/${ruta._id}`)
+                            }
+                            variant="secondary"
+                            size="md"
+                            fullWidth
+                            className="text-sm md:text-base font-semibold py-2.5 md:py-3 bg-gray-600 hover:bg-gray-700 text-white shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all"
+                          >
+                            📄 Ver Detalle
+                          </Button>
+                        )}
                       </div>
-                      <p className="text-xs md:text-sm font-semibold text-gray-900">
-                        {new Date(ruta.asignadoEl).toLocaleDateString("es-CL", {
-                          day: "numeric",
-                          month: "short",
-                          year: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Acciones - Botones con naranja como color principal */}
-                  <div className="flex flex-col sm:flex-row gap-2 md:gap-3">
-                    {ruta.estado === "pendiente" && (
-                      <Button
-                        onClick={() => handleOpenIniciarModal(ruta)}
-                        variant="primary"
-                        size="md"
-                        fullWidth
-                        className="text-sm md:text-base font-semibold py-2.5 md:py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all"
-                      >
-                        🚀 Iniciar Ruta
-                      </Button>
-                    )}
-                    {ruta.estado === "iniciada" && (
-                      <Button
-                        onClick={() => router.push(`/chofer/ruta/${ruta._id}`)}
-                        variant="primary"
-                        size="md"
-                        fullWidth
-                        className="text-sm md:text-base font-semibold py-2.5 md:py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all"
-                      >
-                        📍 Ver Despachos
-                      </Button>
-                    )}
-                    {(ruta.estado === "finalizada" || ruta.estado === "cancelada") && (
-                      <Button
-                        onClick={() => router.push(`/chofer/ruta/${ruta._id}`)}
-                        variant="secondary"
-                        size="md"
-                        fullWidth
-                        className="text-sm md:text-base font-semibold py-2.5 md:py-3 bg-gray-600 hover:bg-gray-700 text-white shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all"
-                      >
-                        📄 Ver Detalle
-                      </Button>
-                    )}
-                  </div>
-                </Card>
-                );
-              })}
-            </div>
-          )}
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </main>
 
@@ -354,7 +404,8 @@ export default function ChoferPage() {
                 {/* Información de la ruta */}
                 <div className="p-3 md:p-4 bg-orange-50 border border-orange-200 rounded-lg">
                   <p className="text-sm md:text-base font-medium text-orange-900">
-                    {rutaSeleccionada.numeroRuta || `Ruta ${rutaSeleccionada._id.slice(-6)}`}
+                    {rutaSeleccionada.numeroRuta ||
+                      `Ruta ${rutaSeleccionada._id.slice(-6)}`}
                   </p>
                   <p className="text-xs md:text-sm text-orange-700 mt-1">
                     {Array.isArray(rutaSeleccionada.despachos)

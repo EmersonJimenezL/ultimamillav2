@@ -19,9 +19,7 @@ export function MetricasTiempo({
   fechaFinalizacion,
   despachos,
 }: MetricasTiempoProps) {
-  const despachosConEntrega = despachos.filter(
-    (d) => d.entrega?.fechaEntrega
-  );
+  const despachosConEntrega = despachos.filter((d) => d.entrega?.fechaEntrega);
 
   // Si no hay datos de tiempo, no mostrar nada
   if (!fechaInicio && !fechaFinalizacion && despachosConEntrega.length === 0) {
@@ -37,13 +35,9 @@ export function MetricasTiempo({
         <span>⏱️</span> Métricas de Tiempo
       </h3>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
-        {asignadoEl && (
-          <MetricaAsignada fecha={asignadoEl} />
-        )}
+        {asignadoEl && <MetricaAsignada fecha={asignadoEl} />}
 
-        {fechaInicio && (
-          <MetricaIniciada fecha={fechaInicio} />
-        )}
+        {fechaInicio && <MetricaIniciada fecha={fechaInicio} />}
 
         {asignadoEl && fechaInicio && (
           <MetricaPreparacion
@@ -64,9 +58,7 @@ export function MetricasTiempo({
           <MetricaTiempoTranscurrido fechaInicio={fechaInicio} />
         )}
 
-        {fechaFinalizacion && (
-          <MetricaFinalizada fecha={fechaFinalizacion} />
-        )}
+        {fechaFinalizacion && <MetricaFinalizada fecha={fechaFinalizacion} />}
 
         {fechaInicio && fechaFinalizacion && (
           <MetricaDuracionTotal
@@ -195,8 +187,7 @@ function MetricaDuracionTotal({
   fechaFinalizacion: Date | string;
 }) {
   const duracionTotal = Math.floor(
-    (new Date(fechaFinalizacion).getTime() -
-      new Date(fechaInicio).getTime()) /
+    (new Date(fechaFinalizacion).getTime() - new Date(fechaInicio).getTime()) /
       (1000 * 60)
   );
   const horas = Math.floor(duracionTotal / 60);
@@ -212,7 +203,11 @@ function MetricaDuracionTotal({
   );
 }
 
-function MetricaTiempoTranscurrido({ fechaInicio }: { fechaInicio: Date | string }) {
+function MetricaTiempoTranscurrido({
+  fechaInicio,
+}: {
+  fechaInicio: Date | string;
+}) {
   const ahora = new Date();
   const tiempoTranscurrido = Math.floor(
     (ahora.getTime() - new Date(fechaInicio).getTime()) / (1000 * 60)
