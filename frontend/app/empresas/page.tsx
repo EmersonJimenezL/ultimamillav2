@@ -156,7 +156,7 @@ export default function EmpresasPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto ">
         <PageNavigation
           title="Gestión de Empresas de Reparto"
           description={`${empresas.length} empresa${
@@ -199,7 +199,7 @@ export default function EmpresasPage() {
 
         {/* Lista de empresas */}
         {empresas.length === 0 ? (
-          <div className="bg-white rounded-lg shadow-sm p-12 text-center">
+          <div className="bg-white rounded-lg shadow-sm p-12 text-center ">
             <p className="text-gray-500 text-lg">No hay empresas registradas</p>
             <Button
               onClick={handleOpenCreate}
@@ -211,7 +211,7 @@ export default function EmpresasPage() {
             </Button>
           </div>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mt-4">
             {empresas.map((empresa) => (
               <div
                 key={empresa._id}
