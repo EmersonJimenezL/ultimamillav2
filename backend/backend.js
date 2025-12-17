@@ -192,7 +192,7 @@ const rutaSchema = new mongoose.Schema(
       trim: true,
       uppercase: true,
       validate: {
-        validator: function(v) {
+        validator: function (v) {
           // Si no hay valor, es válido (opcional)
           if (!v) return true;
           // Si hay valor, debe cumplir el formato
