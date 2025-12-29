@@ -7,11 +7,6 @@ function normalizeRut(rut: string) {
 export function isEmpresaPropia(empresa?: EmpresaReparto | null): boolean {
   if (!empresa) return false;
 
-  const slugPropio = process.env.NEXT_PUBLIC_EMPRESA_PROPIA_SLUG;
-  if (slugPropio && empresa.slug && empresa.slug.toLowerCase() === slugPropio.toLowerCase()) {
-    return true;
-  }
-
   const rutPropio = process.env.NEXT_PUBLIC_EMPRESA_PROPIA_RUT;
   if (rutPropio && normalizeRut(empresa.rut) === normalizeRut(rutPropio)) {
     return true;
@@ -22,6 +17,5 @@ export function isEmpresaPropia(empresa?: EmpresaReparto | null): boolean {
     return true;
   }
 
-  if (empresa.slug && empresa.slug.toLowerCase() === "vivipra") return true;
   return empresa.razonSocial.toLowerCase().includes("vivipra");
 }

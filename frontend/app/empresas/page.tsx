@@ -25,7 +25,6 @@ export default function EmpresasPage() {
   const [formData, setFormData] = useState({
     rut: "",
     razonSocial: "",
-    slug: "",
     usuarioCuenta: "",
     contacto: "",
   });
@@ -68,7 +67,7 @@ export default function EmpresasPage() {
   const handleOpenCreate = () => {
     setModalMode("create");
     setEmpresaActual(null);
-    setFormData({ rut: "", razonSocial: "", slug: "", usuarioCuenta: "", contacto: "" });
+    setFormData({ rut: "", razonSocial: "", usuarioCuenta: "", contacto: "" });
     setShowModal(true);
   };
 
@@ -78,7 +77,6 @@ export default function EmpresasPage() {
     setFormData({
       rut: empresa.rut,
       razonSocial: empresa.razonSocial,
-      slug: empresa.slug || "",
       usuarioCuenta: empresa.usuarioCuenta || "",
       contacto: empresa.contacto,
     });
@@ -88,7 +86,7 @@ export default function EmpresasPage() {
   const handleCloseModal = () => {
     setShowModal(false);
     setEmpresaActual(null);
-    setFormData({ rut: "", razonSocial: "", slug: "", usuarioCuenta: "", contacto: "" });
+    setFormData({ rut: "", razonSocial: "", usuarioCuenta: "", contacto: "" });
     setError(null);
   };
 
@@ -295,24 +293,6 @@ export default function EmpresasPage() {
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                       required
                     />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Slug (opcional)
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.slug}
-                      onChange={(e) =>
-                        setFormData({ ...formData, slug: e.target.value })
-                      }
-                      placeholder="Ej: starken"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Identificador interno. Si lo dejas vacío, se genera automáticamente.
-                    </p>
                   </div>
 
                   <div>

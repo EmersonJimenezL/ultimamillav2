@@ -6,7 +6,6 @@ export interface EmpresaReparto {
   _id: string;
   rut: string;
   razonSocial: string;
-  slug?: string;
   usuarioCuenta?: string;
   contacto: string;
   createdAt: string;
