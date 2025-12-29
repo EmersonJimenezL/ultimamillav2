@@ -20,6 +20,10 @@ export function RutaCard({
   onAgregarDatos,
   cancelando,
 }: RutaCardProps) {
+  const conductorLabel =
+    ruta.nombreConductor && ruta.esChoferExterno
+      ? `${ruta.nombreConductor} (${ruta.conductor})`
+      : ruta.conductor;
   const despachos = Array.isArray(ruta.despachos)
     ? (ruta.despachos.filter(
         (d): d is DespachoConEntrega => typeof d === "object" && d !== null
@@ -53,7 +57,7 @@ export function RutaCard({
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 text-sm">
               <div>
                 <span className="text-gray-600">Conductor:</span>
-                <p className="font-semibold text-gray-900">{ruta.conductor}</p>
+                <p className="font-semibold text-gray-900">{conductorLabel}</p>
               </div>
               {ruta.patente && (
                 <div>
@@ -227,4 +231,3 @@ export function RutaCard({
     </div>
   );
 }
-

@@ -120,6 +120,11 @@ function normalizeRut(rut) {
 function isEmpresaPropia(empresa) {
   if (!empresa) return false;
 
+  const slugPropio = process.env.EMPRESA_PROPIA_SLUG;
+  if (slugPropio && empresa.slug && String(empresa.slug).toLowerCase() === String(slugPropio).toLowerCase()) {
+    return true;
+  }
+
   const rutPropio = process.env.EMPRESA_PROPIA_RUT;
   if (rutPropio && normalizeRut(empresa.rut) === normalizeRut(rutPropio)) {
     return true;
@@ -135,7 +140,14 @@ function isEmpresaPropia(empresa) {
     return true;
   }
 
+  if (empresa.slug && String(empresa.slug).toLowerCase() === "vivipra") return true;
   return String(empresa.razonSocial || "").toLowerCase().includes("vivipra");
+}
+
+function getUserKey(req) {
+  return req.user && (req.user.usuario || req.user.id || req.user._id)
+    ? String(req.user.usuario || req.user.id || req.user._id).toLowerCase()
+    : null;
 }
 
 // Función para sincronizar despachos desde el endpoint externo
@@ -306,6 +318,44 @@ app.put(
   requireRoles(["admin", "adminBodega", "subBodega"]),
   async (req, res) => {
     try {
+      if (req.body && req.body.razonSocial && !req.body.slug) {
+        const text = String(req.body.razonSocial || "")
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .toLowerCase()
+          .replace(/[^a-z0-9\s]/g, " ");
+
+        const stopwords = new Set([
+          "sa",
+          "s",
+          "a",
+          "ltda",
+          "spa",
+          "limitada",
+          "ltd",
+          "srl",
+          "eirl",
+          "inc",
+          "corp",
+          "cia",
+          "compania",
+          "y",
+          "de",
+          "del",
+          "la",
+          "el",
+          "los",
+          "las",
+        ]);
+
+        req.body.slug = text
+          .split(/\s+/)
+          .map((w) => w.trim())
+          .filter(Boolean)
+          .filter((w) => !stopwords.has(w))
+          .join("");
+      }
+
       const empresa = await EmpresaReparto.findByIdAndUpdate(
         req.params.id,
         req.body,
@@ -325,6 +375,13 @@ app.put(
         data: empresa,
       });
     } catch (error) {
+      if (error.code === 11000) {
+        return res.status(400).json({
+          status: "error",
+          message: "El RUT o slug ya est  registrado",
+        });
+      }
+
       res.status(400).json({
         status: "error",
         message: "Error al actualizar empresa",
@@ -621,13 +678,71 @@ app.delete(
 app.get(
   "/api/rutas",
   authMiddleware,
-  requireRoles(["admin", "chofer", "subBodega", "adminBodega"]),
+  requireRoles(["admin", "subBodega", "adminBodega"]),
   async (req, res) => {
     try {
       const rutas = await Ruta.find()
         .populate("empresaReparto")
         .populate("despachos")
         .sort({ createdAt: -1 });
+
+      res.json({
+        status: "success",
+        data: rutas,
+        count: rutas.length,
+      });
+    } catch (error) {
+      res.status(500).json({
+        status: "error",
+        message: "Error al obtener rutas",
+        error: error.message,
+      });
+    }
+  }
+);
+
+// GET /api/rutas/mis-rutas - Obtener rutas para el chofer/empresa logueada
+app.get(
+  "/api/rutas/mis-rutas",
+  authMiddleware,
+  requireRoles(["chofer"]),
+  async (req, res) => {
+    try {
+      const userKey = getUserKey(req);
+      if (!userKey) {
+        return res.status(401).json({
+          status: "error",
+          message: "Usuario no autenticado",
+        });
+      }
+
+      // Caso 1: chofer interno (ruta.conductor = usuario)
+      const rutasConductor = await Ruta.find({ conductor: userKey })
+        .populate("empresaReparto")
+        .populate("despachos")
+        .sort({ createdAt: -1 });
+
+      // Caso 2: cuenta de empresa externa (usuario == EmpresaReparto.slug)
+      const empresa = await EmpresaReparto.findOne({
+        $or: [{ slug: userKey }, { usuarioCuenta: userKey }],
+      })
+        .select({ _id: 1 })
+        .lean();
+
+      let rutasEmpresa = [];
+      if (empresa) {
+        rutasEmpresa = await Ruta.find({ empresaReparto: empresa._id })
+          .populate("empresaReparto")
+          .populate("despachos")
+          .sort({ createdAt: -1 });
+      }
+
+      const map = new Map();
+      for (const r of [...rutasConductor, ...rutasEmpresa]) {
+        map.set(String(r._id), r);
+      }
+
+      const rutas = Array.from(map.values());
 
       res.json({
         status: "success",
@@ -660,6 +775,30 @@ app.get(
           status: "error",
           message: "Ruta no encontrada",
         });
+      }
+
+      // Restringir acceso a choferes: solo su propia ruta o rutas de su empresa externa
+      const isPrivileged = userHasRole(req.user, "admin") || userHasRole(req.user, "adminBodega") || userHasRole(req.user, "subBodega");
+      if (!isPrivileged && userHasRole(req.user, "chofer")) {
+        const userKey = getUserKey(req);
+        if (!userKey) {
+          return res.status(401).json({
+            status: "error",
+            message: "Usuario no autenticado",
+          });
+        }
+
+        let allowed = String(ruta.conductor || "").toLowerCase() === userKey;
+        if (!allowed && ruta.empresaReparto && ruta.empresaReparto.slug) {
+          allowed = String(ruta.empresaReparto.slug).toLowerCase() === userKey;
+        }
+
+        if (!allowed) {
+          return res.status(403).json({
+            status: "error",
+            message: "No tienes permisos para ver esta ruta",
+          });
+        }
       }
 
       res.json({
@@ -845,7 +984,7 @@ app.post(
         });
       }
 
-      // Si es chofer externo, registrar el nombre del conductor
+      // Si es chofer externo, registrar el nombre real y asociar la ruta a la cuenta que inicia
       if (ruta.esChoferExterno) {
         if (!nombreConductor) {
           return res.status(400).json({
@@ -853,7 +992,21 @@ app.post(
             message: "El nombre del conductor es obligatorio para chofer externo",
           });
         }
-        ruta.conductor = nombreConductor;
+
+        const usuarioChofer =
+          req.user && (req.user.usuario || req.user.id || req.user._id)
+            ? String(req.user.usuario || req.user.id || req.user._id)
+            : null;
+
+        if (!usuarioChofer) {
+          return res.status(400).json({
+            status: "error",
+            message: "No se pudo determinar el usuario chofer desde el token",
+          });
+        }
+
+        ruta.conductor = usuarioChofer;
+        ruta.nombreConductor = String(nombreConductor).trim();
       }
 
       // Registrar patente, fecha de inicio y cambiar estado a iniciada

@@ -40,17 +40,7 @@ export default function ChoferPage() {
     try {
       setLoading(true);
       setError(null);
-      const data = await rutaService.getAll();
-
-      // Filtrar solo las rutas del chofer actual
-      const usuario = user!.usuario;
-      const nombreUsuario = getNombreCompleto(user!);
-      const rutasDelChofer = data.filter(
-        (r) =>
-          r.conductor === usuario ||
-          r.conductor === nombreUsuario ||
-          r.conductor === "Pendiente"
-      );
+      const rutasDelChofer = await rutaService.getMine();
 
       // Ordenar: rutas iniciadas primero, luego pendientes, luego finalizadas/canceladas
       const rutasOrdenadas = rutasDelChofer.sort((a, b) => {

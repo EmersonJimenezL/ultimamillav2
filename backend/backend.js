@@ -53,6 +53,43 @@ function validarPatente(patente) {
 }
 
 // ===== SCHEMA: EMPRESA DE REPARTO =====
+function slugifyEmpresa(value) {
+  const text = String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9\\s]/g, " ");
+
+  const stopwords = new Set([
+    "sa",
+    "s",
+    "a",
+    "ltda",
+    "spa",
+    "limitada",
+    "ltd",
+    "srl",
+    "eirl",
+    "inc",
+    "corp",
+    "cia",
+    "compania",
+    "y",
+    "de",
+    "del",
+    "la",
+    "el",
+    "los",
+    "las",
+  ]);
+
+  return text
+    .split(/\\s+/)
+    .map((w) => w.trim())
+    .filter(Boolean)
+    .filter((w) => !stopwords.has(w))
+    .join("");
+}
 const empresaRepartoSchema = new mongoose.Schema(
   {
     rut: {
@@ -70,6 +107,21 @@ const empresaRepartoSchema = new mongoose.Schema(
       required: [true, "La razón social es obligatoria"],
       trim: true,
     },
+    slug: {
+      type: String,
+      trim: true,
+      lowercase: true,
+      unique: true,
+      sparse: true,
+    },
+    usuarioCuenta: {
+      type: String,
+      trim: true,
+      lowercase: true,
+      unique: true,
+      sparse: true,
+      // Usuario que usa la empresa para iniciar sesión (ej: starken, pdqq)
+    },
     contacto: {
       type: String,
       required: [true, "El contacto es obligatorio"],
@@ -81,6 +133,32 @@ const empresaRepartoSchema = new mongoose.Schema(
     collection: "empresasReparto",
   }
 );
+
+empresaRepartoSchema.pre("save", async function (next) {
+  if (this.razonSocial && (!this.slug || this.isModified("razonSocial"))) {
+    const base = slugifyEmpresa(this.razonSocial);
+    if (!base) return next();
+
+    let candidate = base;
+    let suffix = 2;
+
+    while (true) {
+      const existing = await mongoose
+        .model("EmpresaReparto")
+        .findOne({ slug: candidate, _id: { $ne: this._id } })
+        .select({ _id: 1 })
+        .lean();
+
+      if (!existing) break;
+      candidate = `${base}${suffix}`;
+      suffix += 1;
+    }
+
+    this.slug = candidate;
+  }
+
+  next();
+});
 
 // ===== SCHEMA: DESPACHO =====
 const despachoSchema = new mongoose.Schema(
@@ -198,6 +276,12 @@ const rutaSchema = new mongoose.Schema(
       required: false, // Opcional si es chofer externo
       trim: true,
       // Se mostrará como opciones los usuarios con rol chofer
+    },
+    nombreConductor: {
+      type: String,
+      required: false,
+      trim: true,
+      // Para chofer externo: nombre real del conductor
     },
     esChoferExterno: {
       type: Boolean,

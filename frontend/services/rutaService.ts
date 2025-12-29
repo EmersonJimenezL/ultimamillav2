@@ -30,6 +30,7 @@ export interface Ruta {
   numeroRuta?: string; // Generado automáticamente por el backend
   empresaReparto: string | { _id: string; razonSocial: string; nombre: string };
   conductor: string;
+  nombreConductor?: string;
   patente?: string; // Opcional: se completa cuando el chofer inicia la ruta
   esChoferExterno?: boolean; // Indica si el chofer es externo
   despachos: string[] | DespachoConEntrega[];
@@ -61,6 +62,21 @@ class RutaService {
   // Obtener todas las rutas
   async getAll(): Promise<Ruta[]> {
     const response = await fetch(`${API_URL}/api/rutas`, {
+      headers: this.getAuthHeader(),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `Error al obtener rutas (${response.status})`);
+    }
+
+    const data: RutaResponse = await response.json();
+    return Array.isArray(data.data) ? data.data : [];
+  }
+
+  // Obtener rutas para el chofer/empresa logueada
+  async getMine(): Promise<Ruta[]> {
+    const response = await fetch(`${API_URL}/api/rutas/mis-rutas`, {
       headers: this.getAuthHeader(),
     });
 
