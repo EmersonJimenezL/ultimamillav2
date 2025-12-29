@@ -19,7 +19,7 @@
   "editor.tabCompletion": "off",
   "editor.wordBasedSuggestions": "off",
   "editor.parameterHints.enabled": false,
-  "editor.hover.enabled": false,
+  "editor.hover.enabled": "off",
   "editor.snippetSuggestions": "none",
 
   // Desactivar Cursor/Windsurf AI (si es lo que estás usando)

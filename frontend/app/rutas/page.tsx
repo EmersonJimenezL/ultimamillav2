@@ -24,10 +24,8 @@ export default function RutasPage() {
     loading,
     error,
     cancelando,
-    entregando,
     loadRutas,
     handleCancelar,
-    handleMarcarEntregado,
   } = useRutas();
 
   const {
@@ -183,10 +181,8 @@ export default function RutasPage() {
                 isExpanded={rutaExpandida === ruta._id}
                 onToggleExpand={() => handleToggleExpand(ruta._id)}
                 onCancelar={handleCancelar}
-                onMarcarEntregado={handleMarcarEntregado}
                 onAgregarDatos={openModal}
                 cancelando={cancelando === ruta._id}
-                entregando={entregando}
               />
             ))}
           </div>

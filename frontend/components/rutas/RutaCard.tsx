@@ -8,10 +8,8 @@ interface RutaCardProps {
   isExpanded: boolean;
   onToggleExpand: () => void;
   onCancelar: (rutaId: string, numeroRuta?: string) => void;
-  onMarcarEntregado: (despachoId: string, folioNum: string | number) => void;
   onAgregarDatos: (despacho: any) => void;
   cancelando: boolean;
-  entregando: string | null;
 }
 
 export function RutaCard({
@@ -19,23 +17,20 @@ export function RutaCard({
   isExpanded,
   onToggleExpand,
   onCancelar,
-  onMarcarEntregado,
   onAgregarDatos,
   cancelando,
-  entregando,
 }: RutaCardProps) {
-  // Filtrar solo despachos que sean objetos (no strings)
   const despachos = Array.isArray(ruta.despachos)
-    ? (ruta.despachos.filter((d): d is DespachoConEntrega => typeof d === 'object' && d !== null) as DespachoConEntrega[])
+    ? (ruta.despachos.filter(
+        (d): d is DespachoConEntrega => typeof d === "object" && d !== null
+      ) as DespachoConEntrega[])
     : [];
-  const despachosEntregados = despachos.filter(
-    (d) => d.estado === "entregado"
-  ).length;
+
+  const despachosEntregados = despachos.filter((d) => d.estado === "entregado").length;
   const totalDespachos = despachos.length;
 
   return (
     <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow">
-      {/* Header de la ruta */}
       <div
         className="p-4 cursor-pointer hover:bg-gray-50 transition-colors"
         onClick={onToggleExpand}
@@ -44,7 +39,7 @@ export function RutaCard({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-2">
               <h3 className="text-lg font-bold text-gray-900 truncate">
-                🚚 {ruta.numeroRuta || `Ruta ${ruta._id.slice(-6)}`}
+                📦 {ruta.numeroRuta || `Ruta ${ruta._id.slice(-6)}`}
               </h3>
               <span
                 className={`px-3 py-1 text-xs font-semibold rounded-full whitespace-nowrap ${getEstadoBadgeColor(
@@ -63,9 +58,7 @@ export function RutaCard({
               {ruta.patente && (
                 <div>
                   <span className="text-gray-600">Patente:</span>
-                  <p className="font-semibold text-gray-900 uppercase">
-                    {ruta.patente}
-                  </p>
+                  <p className="font-semibold text-gray-900 uppercase">{ruta.patente}</p>
                 </div>
               )}
               <div>
@@ -89,16 +82,9 @@ export function RutaCard({
 
           <button
             className="text-gray-400 hover:text-gray-600 transition-transform"
-            style={{
-              transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)",
-            }}
+            style={{ transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)" }}
           >
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -110,11 +96,9 @@ export function RutaCard({
         </div>
       </div>
 
-      {/* Contenido expandido */}
       {isExpanded && (
         <div className="border-t border-gray-200 bg-gray-50">
           <div className="p-4 space-y-4">
-            {/* Métricas de tiempo */}
             <MetricasTiempo
               asignadoEl={ruta.asignadoEl}
               fechaInicio={ruta.fechaInicio}
@@ -122,7 +106,6 @@ export function RutaCard({
               despachos={despachos}
             />
 
-            {/* Botón de cancelar */}
             {ruta.estado !== "cancelada" && ruta.estado !== "finalizada" && (
               <Button
                 onClick={(e) => {
@@ -137,7 +120,6 @@ export function RutaCard({
               </Button>
             )}
 
-            {/* Lista de despachos */}
             {despachos.length > 0 && (
               <div className="space-y-2">
                 <h4 className="font-semibold text-gray-900">
@@ -150,7 +132,9 @@ export function RutaCard({
                       className={`p-3 rounded-lg border ${
                         despacho.estado === "entregado"
                           ? "bg-green-50 border-green-200"
-                          : "bg-white border-gray-200"
+                          : despacho.estado === "no_entregado"
+                            ? "bg-amber-50 border-amber-200"
+                            : "bg-white border-gray-200"
                       }`}
                     >
                       <div className="flex items-start justify-between gap-3">
@@ -167,62 +151,54 @@ export function RutaCard({
                                 despacho.estado
                               )}`}
                             >
-                              {despacho.estado.toUpperCase()}
+                              {String(despacho.estado).toUpperCase()}
                             </span>
                           </div>
-                          <p className="text-sm text-gray-700">
-                            {despacho.CardName}
-                          </p>
-                          <p className="text-xs text-gray-600">
-                            📍 {despacho.Address2}
-                          </p>
+                          <p className="text-sm text-gray-700">{despacho.CardName}</p>
+                          <p className="text-xs text-gray-600">📍 {despacho.Address2}</p>
 
-                          {/* Datos de entrega si está entregado */}
-                          {despacho.estado === "entregado" &&
-                            despacho.entrega && (
-                              <div className="mt-2 p-2 bg-green-100 rounded text-xs space-y-1">
-                                <p className="font-semibold text-green-800">
-                                  ✓ Entregado
+                          {despacho.estado === "entregado" && despacho.entrega && (
+                            <div className="mt-2 p-2 bg-green-100 rounded text-xs space-y-1">
+                              <p className="font-semibold text-green-800">✓ Entregado</p>
+                              {despacho.entrega.receptorNombre && (
+                                <p className="text-green-700">
+                                  Receptor: {despacho.entrega.receptorNombre}{" "}
+                                  {despacho.entrega.receptorApellido}
                                 </p>
-                                {despacho.entrega.receptorNombre && (
-                                  <p className="text-green-700">
-                                    Receptor: {despacho.entrega.receptorNombre}{" "}
-                                    {despacho.entrega.receptorApellido}
-                                  </p>
-                                )}
-                                {despacho.entrega.receptorRut && (
-                                  <p className="text-green-700">
-                                    RUT: {formatRut(despacho.entrega.receptorRut)}
-                                  </p>
-                                )}
-                                {despacho.entrega.fechaEntrega && (
-                                  <p className="text-green-700">
-                                    {new Date(
-                                      despacho.entrega.fechaEntrega
-                                    ).toLocaleString("es-CL")}
-                                  </p>
-                                )}
-                              </div>
-                            )}
+                              )}
+                              {despacho.entrega.receptorRut && (
+                                <p className="text-green-700">
+                                  RUT: {formatRut(despacho.entrega.receptorRut)}
+                                </p>
+                              )}
+                              {despacho.entrega.fechaEntrega && (
+                                <p className="text-green-700">
+                                  {new Date(despacho.entrega.fechaEntrega).toLocaleString("es-CL")}
+                                </p>
+                              )}
+                            </div>
+                          )}
+
+                          {despacho.estado === "no_entregado" && despacho.noEntrega && (
+                            <div className="mt-2 p-2 bg-amber-100 rounded text-xs space-y-1">
+                              <p className="font-semibold text-amber-900">⚠ No entregado</p>
+                              {despacho.noEntrega.motivo && (
+                                <p className="text-amber-900">
+                                  Motivo: {despacho.noEntrega.motivo}
+                                </p>
+                              )}
+                              {despacho.noEntrega.fechaNoEntrega && (
+                                <p className="text-amber-900">
+                                  {new Date(despacho.noEntrega.fechaNoEntrega).toLocaleString(
+                                    "es-CL"
+                                  )}
+                                </p>
+                              )}
+                            </div>
+                          )}
                         </div>
 
-                        {/* Botones de acción */}
                         <div className="flex flex-col gap-1">
-                          {despacho.estado === "asignado" && (
-                            <Button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onMarcarEntregado(despacho._id, despacho.FolioNum);
-                              }}
-                              variant="primary"
-                              size="sm"
-                              disabled={entregando === despacho._id}
-                            >
-                              {entregando === despacho._id
-                                ? "..."
-                                : "✓ Entregar"}
-                            </Button>
-                          )}
                           {despacho.estado === "entregado" && (
                             <Button
                               onClick={(e) => {
@@ -240,6 +216,9 @@ export function RutaCard({
                     </div>
                   ))}
                 </div>
+                <p className="text-xs text-gray-500">
+                  Las entregas/no entregas solo se registran desde el perfil del chofer.
+                </p>
               </div>
             )}
           </div>
@@ -248,3 +227,4 @@ export function RutaCard({
     </div>
   );
 }
+

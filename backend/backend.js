@@ -128,7 +128,7 @@ const despachoSchema = new mongoose.Schema(
     // Campos adicionales para gestión interna
     estado: {
       type: String,
-      enum: ["pendiente", "asignado", "entregado", "cancelado"],
+      enum: ["pendiente", "asignado", "entregado", "no_entregado", "cancelado"],
       default: "pendiente",
     },
     empresaReparto: {
@@ -157,6 +157,24 @@ const despachoSchema = new mongoose.Schema(
         type: String, // Base64 de la imagen
       },
       fechaEntrega: {
+        type: Date,
+      },
+    },
+    // Datos de no entrega (se completan cuando el chofer no puede entregar)
+    noEntrega: {
+      motivo: {
+        type: String,
+        trim: true,
+      },
+      observacion: {
+        type: String,
+        trim: true,
+        default: "",
+      },
+      fotoEvidencia: {
+        type: String, // Base64 de la imagen
+      },
+      fechaNoEntrega: {
         type: Date,
       },
     },

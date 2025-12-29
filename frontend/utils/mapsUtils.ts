@@ -49,10 +49,17 @@ export function abrirRutaCompleta(direcciones: string[]) {
 /**
  * Extrae direcciones válidas de un array de despachos
  */
-export function extraerDireccionesValidas(despachos: any[]): string[] {
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+export function extraerDireccionesValidas(despachos: unknown[]): string[] {
   if (!Array.isArray(despachos)) return [];
 
   return despachos
-    .filter((d: any) => typeof d === "object" && d !== null && d.Address2)
-    .map((d: any) => d.Address2);
+    .filter((d): d is Record<string, unknown> => isRecord(d))
+    .map((d) => d.Address2)
+    .filter((address): address is string => typeof address === "string")
+    .map((address) => address.trim())
+    .filter(Boolean);
 }

@@ -1,33 +1,47 @@
-import { useState, useRef } from "react";
+import { useRef, useState } from "react";
 import { despachoService } from "@/services/despachoService";
 
+export type TipoGestionDespacho = "entregado" | "no_entregado";
+
 interface FormData {
+  tipo: TipoGestionDespacho;
   receptorRut: string;
   receptorNombre: string;
   receptorApellido: string;
-  fotoPreview: string | null;
+  fotoEntregaPreview: string | null;
+  motivoNoEntrega: string;
+  observacionNoEntrega: string;
+  fotoEvidenciaPreview: string | null;
 }
 
 interface FormErrors {
+  motivoError: string;
   rutError: string;
   nombreError: string;
   apellidoError: string;
-  fotoError: string;
+  fotoEntregaError: string;
+  fotoEvidenciaError: string;
 }
 
 export function useEntregaDespacho() {
   const [formData, setFormData] = useState<FormData>({
+    tipo: "entregado",
     receptorRut: "",
     receptorNombre: "",
     receptorApellido: "",
-    fotoPreview: null,
+    fotoEntregaPreview: null,
+    motivoNoEntrega: "",
+    observacionNoEntrega: "",
+    fotoEvidenciaPreview: null,
   });
 
   const [errors, setErrors] = useState<FormErrors>({
+    motivoError: "",
     rutError: "",
     nombreError: "",
     apellidoError: "",
-    fotoError: "",
+    fotoEntregaError: "",
+    fotoEvidenciaError: "",
   });
 
   const [entregando, setEntregando] = useState(false);
@@ -35,20 +49,38 @@ export function useEntregaDespacho() {
 
   const resetForm = () => {
     setFormData({
+      tipo: "entregado",
       receptorRut: "",
       receptorNombre: "",
       receptorApellido: "",
-      fotoPreview: null,
+      fotoEntregaPreview: null,
+      motivoNoEntrega: "",
+      observacionNoEntrega: "",
+      fotoEvidenciaPreview: null,
     });
     setErrors({
+      motivoError: "",
       rutError: "",
       nombreError: "",
       apellidoError: "",
-      fotoError: "",
+      fotoEntregaError: "",
+      fotoEvidenciaError: "",
     });
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const setTipo = (tipo: TipoGestionDespacho) => {
+    setFormData((prev) => ({ ...prev, tipo }));
+    setErrors((prev) => ({
+      ...prev,
+      motivoError: "",
+      rutError: "",
+      nombreError: "",
+      apellidoError: "",
+      fotoEntregaError: "",
+      fotoEvidenciaError: "",
+    }));
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const formatRut = (value: string) => {
@@ -85,69 +117,95 @@ export function useEntregaDespacho() {
     setErrors((prev) => ({ ...prev, apellidoError: "" }));
   };
 
+  const handleMotivoNoEntregaChange = (value: string) => {
+    setFormData((prev) => ({ ...prev, motivoNoEntrega: value }));
+    setErrors((prev) => ({ ...prev, motivoError: "" }));
+  };
+
+  const handleObservacionNoEntregaChange = (value: string) => {
+    setFormData((prev) => ({ ...prev, observacionNoEntrega: value }));
+  };
+
   const handleFotoChange = (file: File | null) => {
     if (!file) return;
 
-    // Validar tamaño (máximo 5MB)
     if (file.size > 5 * 1024 * 1024) {
       setErrors((prev) => ({
         ...prev,
-        fotoError: "La imagen no debe superar los 5MB",
+        fotoEntregaError: "La imagen no debe superar los 5MB",
+        fotoEvidenciaError: "La imagen no debe superar los 5MB",
       }));
       return;
     }
 
-    // Validar tipo
     if (!file.type.startsWith("image/")) {
       setErrors((prev) => ({
         ...prev,
-        fotoError: "Solo se permiten archivos de imagen",
+        fotoEntregaError: "Solo se permiten archivos de imagen",
+        fotoEvidenciaError: "Solo se permiten archivos de imagen",
       }));
       return;
     }
 
-    setErrors((prev) => ({ ...prev, fotoError: "" }));
+    setErrors((prev) => ({ ...prev, fotoEntregaError: "", fotoEvidenciaError: "" }));
 
-    // Leer archivo y convertir a base64
     const reader = new FileReader();
     reader.onloadend = () => {
       const base64 = reader.result as string;
-      setFormData((prev) => ({ ...prev, fotoPreview: base64 }));
+      setFormData((prev) =>
+        prev.tipo === "entregado"
+          ? { ...prev, fotoEntregaPreview: base64 }
+          : { ...prev, fotoEvidenciaPreview: base64 }
+      );
     };
     reader.readAsDataURL(file);
   };
 
   const validarFormulario = (): boolean => {
     const newErrors: FormErrors = {
+      motivoError: "",
       rutError: "",
       nombreError: "",
       apellidoError: "",
-      fotoError: "",
+      fotoEntregaError: "",
+      fotoEvidenciaError: "",
     };
 
     let isValid = true;
 
-    if (!formData.receptorRut.trim()) {
-      newErrors.rutError = "El RUT del receptor es obligatorio";
-      isValid = false;
-    } else if (formData.receptorRut.length < 8) {
-      newErrors.rutError = "Ingresa un RUT válido";
-      isValid = false;
-    }
+    if (formData.tipo === "entregado") {
+      if (!formData.receptorRut.trim()) {
+        newErrors.rutError = "El RUT del receptor es obligatorio";
+        isValid = false;
+      } else if (formData.receptorRut.length < 8) {
+        newErrors.rutError = "Ingresa un RUT válido";
+        isValid = false;
+      }
 
-    if (!formData.receptorNombre.trim()) {
-      newErrors.nombreError = "El nombre del receptor es obligatorio";
-      isValid = false;
-    }
+      if (!formData.receptorNombre.trim()) {
+        newErrors.nombreError = "El nombre del receptor es obligatorio";
+        isValid = false;
+      }
 
-    if (!formData.receptorApellido.trim()) {
-      newErrors.apellidoError = "El apellido del receptor es obligatorio";
-      isValid = false;
-    }
+      if (!formData.receptorApellido.trim()) {
+        newErrors.apellidoError = "El apellido del receptor es obligatorio";
+        isValid = false;
+      }
 
-    if (!formData.fotoPreview) {
-      newErrors.fotoError = "Debes tomar una foto de la entrega";
-      isValid = false;
+      if (!formData.fotoEntregaPreview) {
+        newErrors.fotoEntregaError = "Debes tomar una foto de la entrega";
+        isValid = false;
+      }
+    } else {
+      if (!formData.motivoNoEntrega.trim()) {
+        newErrors.motivoError = "Debes seleccionar un motivo";
+        isValid = false;
+      }
+
+      if (!formData.fotoEvidenciaPreview) {
+        newErrors.fotoEvidenciaError = "Debes tomar una foto como evidencia";
+        isValid = false;
+      }
     }
 
     setErrors(newErrors);
@@ -155,24 +213,35 @@ export function useEntregaDespacho() {
   };
 
   const entregarDespacho = async (despachoId: string) => {
-    if (!validarFormulario()) {
-      return false;
-    }
+    if (!validarFormulario()) return false;
 
     try {
       setEntregando(true);
-
       await despachoService.entregarConFoto(
         despachoId,
         formData.receptorRut,
         formData.receptorNombre,
         formData.receptorApellido,
-        formData.fotoPreview!
+        formData.fotoEntregaPreview!
       );
-
       return true;
-    } catch (err: any) {
-      throw new Error(err.message || "Error al entregar despacho");
+    } finally {
+      setEntregando(false);
+    }
+  };
+
+  const marcarNoEntregado = async (despachoId: string) => {
+    if (!validarFormulario()) return false;
+
+    try {
+      setEntregando(true);
+      await despachoService.marcarNoEntregadoConEvidencia(
+        despachoId,
+        formData.motivoNoEntrega,
+        formData.fotoEvidenciaPreview!,
+        formData.observacionNoEntrega
+      );
+      return true;
     } finally {
       setEntregando(false);
     }
@@ -184,11 +253,16 @@ export function useEntregaDespacho() {
     entregando,
     fileInputRef,
     resetForm,
+    setTipo,
     formatRut,
     handleRutChange,
     handleNombreChange,
     handleApellidoChange,
+    handleMotivoNoEntregaChange,
+    handleObservacionNoEntregaChange,
     handleFotoChange,
     entregarDespacho,
+    marcarNoEntregado,
   };
 }
+

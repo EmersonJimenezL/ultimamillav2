@@ -11,7 +11,13 @@ export interface Despacho {
   Comments: string;
   ShipToCode: string;
   Address2: string;
-  estado: "pendiente" | "asignado" | "entregado" | "cancelado";
+  estado: "pendiente" | "asignado" | "entregado" | "no_entregado" | "cancelado";
+  noEntrega?: {
+    motivo?: string;
+    observacion?: string;
+    fotoEvidencia?: string;
+    fechaNoEntrega?: string;
+  };
   empresaReparto?: {
     _id: string;
     razonSocial: string;
@@ -78,7 +84,7 @@ class DespachoService {
   // Actualizar estado de un despacho
   async updateEstado(
     id: string,
-    estado: "pendiente" | "asignado" | "entregado" | "cancelado"
+    estado: "pendiente" | "asignado" | "entregado" | "no_entregado" | "cancelado"
   ): Promise<Despacho> {
     const response = await fetch(`${API_URL}/api/despachos/${id}`, {
       method: "PUT",
@@ -88,22 +94,6 @@ class DespachoService {
 
     if (!response.ok) {
       throw new Error("Error al actualizar estado del despacho");
-    }
-
-    const data = await response.json();
-    return data.data;
-  }
-
-  // Marcar despacho como entregado (para admin/bodega)
-  async marcarComoEntregado(id: string): Promise<Despacho> {
-    const response = await fetch(`${API_URL}/api/despachos/${id}/entregar`, {
-      method: "POST",
-      headers: this.getAuthHeader(),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || "Error al marcar despacho como entregado");
     }
 
     const data = await response.json();
@@ -132,6 +122,32 @@ class DespachoService {
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(errorData.message || "Error al entregar despacho");
+    }
+
+    const data = await response.json();
+    return data.data;
+  }
+
+  // Marcar despacho como no entregado con motivo y evidencia (para chofer)
+  async marcarNoEntregadoConEvidencia(
+    id: string,
+    motivo: string,
+    fotoEvidencia: string,
+    observacion?: string
+  ): Promise<Despacho> {
+    const response = await fetch(`${API_URL}/api/despachos/${id}/no-entregado-chofer`, {
+      method: "POST",
+      headers: this.getAuthHeader(),
+      body: JSON.stringify({
+        motivo,
+        observacion,
+        fotoEvidencia,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || "Error al marcar despacho como no entregado");
     }
 
     const data = await response.json();

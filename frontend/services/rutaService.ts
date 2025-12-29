@@ -9,13 +9,19 @@ export interface DespachoConEntrega {
   CardCode: string;
   Address2: string;
   Comments?: string;
-  estado: string;
+  estado: "pendiente" | "asignado" | "entregado" | "no_entregado" | "cancelado" | string;
   entrega?: {
     receptorNombre?: string;
     receptorApellido?: string;
     receptorRut?: string;
     fechaEntrega?: string;
     fotoEntrega?: string;
+  };
+  noEntrega?: {
+    motivo?: string;
+    observacion?: string;
+    fechaNoEntrega?: string;
+    fotoEvidencia?: string;
   };
 }
 

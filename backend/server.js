@@ -103,6 +103,16 @@ const requireRoles = (allowedRoles) => {
 const EXTERNAL_API_URL = "http://192.168.200.80:3000/data/FactDespacho";
 const SYNC_INTERVAL = 5 * 60 * 1000; // 5 minutos en milisegundos
 
+function isDespachoTerminal(estado) {
+  return estado === "entregado" || estado === "no_entregado" || estado === "cancelado";
+}
+
+function userHasRole(user, role) {
+  if (!user) return false;
+  const roles = Array.isArray(user.rol) ? user.rol : [user.rol];
+  return roles.includes(role);
+}
+
 // Función para sincronizar despachos desde el endpoint externo
 async function sincronizarDespachos() {
   try {
@@ -433,6 +443,20 @@ app.put(
   requireRoles(["admin", "chofer", "subBodega", "adminBodega"]),
   async (req, res) => {
     try {
+      const wantsToMarkDelivered =
+        req.body &&
+        (req.body.estado === "entregado" ||
+          req.body.estado === "no_entregado" ||
+          Object.prototype.hasOwnProperty.call(req.body, "entrega") ||
+          Object.prototype.hasOwnProperty.call(req.body, "noEntrega"));
+
+      if (wantsToMarkDelivered && !userHasRole(req.user, "chofer")) {
+        return res.status(403).json({
+          status: "error",
+          message: "Solo un chofer puede marcar entregas/no entregas",
+        });
+      }
+
       const despacho = await Despacho.findByIdAndUpdate(
         req.params.id,
         req.body,
@@ -467,7 +491,7 @@ app.put(
 app.post(
   "/api/despachos/:id/entregar",
   authMiddleware,
-  requireRoles(["admin", "chofer", "subBodega", "adminBodega"]),
+  requireRoles(["chofer"]),
   async (req, res) => {
     try {
       const despacho = await Despacho.findById(req.params.id);
@@ -476,6 +500,14 @@ app.post(
         return res.status(404).json({
           status: "error",
           message: "Despacho no encontrado",
+        });
+      }
+
+      // Evitar re-marcar si ya está finalizado
+      if (despacho.estado === "entregado" || despacho.estado === "no_entregado") {
+        return res.status(400).json({
+          status: "error",
+          message: "El despacho ya fue marcado como entregado/no entregado",
         });
       }
 
@@ -496,7 +528,7 @@ app.post(
             _id: { $in: despachosIds }
           });
 
-          const todosEstanEntregados = todosEntregados.every(d => d.estado === "entregado");
+          const todosEstanEntregados = todosEntregados.every(d => isDespachoTerminal(d.estado));
 
           // Si todos están entregados, marcar la ruta como finalizada
           if (todosEstanEntregados) {
@@ -628,7 +660,20 @@ app.post(
     try {
       console.log("📝 Datos recibidos para crear ruta:", JSON.stringify(req.body, null, 2));
 
-      const ruta = new Ruta(req.body);
+      const asignadoPor =
+        req.user && (req.user.usuario || req.user.id || req.user._id)
+          ? String(req.user.usuario || req.user.id || req.user._id)
+          : null;
+
+      if (!asignadoPor) {
+        return res.status(400).json({
+          status: "error",
+          message:
+            "No se pudo determinar el usuario que asigna (asignadoPor) desde el token",
+        });
+      }
+
+      const ruta = new Ruta({ ...req.body, asignadoPor });
       await ruta.save();
 
       console.log("✅ Ruta creada exitosamente:", ruta._id);
@@ -817,10 +862,10 @@ app.post(
       }
 
       // Verificar que el despacho no esté ya entregado
-      if (despacho.estado === "entregado") {
+      if (despacho.estado === "entregado" || despacho.estado === "no_entregado") {
         return res.status(400).json({
           status: "error",
-          message: "El despacho ya fue marcado como entregado",
+          message: "El despacho ya fue marcado como entregado/no entregado",
         });
       }
 
@@ -842,11 +887,12 @@ app.post(
       const ruta = await Ruta.findById(despacho.rutaAsignada).populate("despachos");
 
       if (ruta) {
-        const todosEntregados = ruta.despachos.every(
-          (d) => d._id.toString() === despacho._id.toString() || d.estado === "entregado"
-        );
+        const todosFinalizados = ruta.despachos.every((d) => {
+          if (d._id.toString() === despacho._id.toString()) return true;
+          return isDespachoTerminal(d.estado);
+        });
 
-        if (todosEntregados && ruta.estado !== "finalizada") {
+        if (todosFinalizados && ruta.estado !== "finalizada") {
           ruta.estado = "finalizada";
           ruta.fechaFinalizacion = new Date();
           await ruta.save();
@@ -864,6 +910,88 @@ app.post(
       res.status(500).json({
         status: "error",
         message: "Error al entregar despacho",
+        error: error.message,
+      });
+    }
+  }
+);
+
+// POST /api/despachos/:id/no-entregado-chofer - Marcar despacho como no entregado con motivo y evidencia (chofer)
+app.post(
+  "/api/despachos/:id/no-entregado-chofer",
+  authMiddleware,
+  requireRoles(["chofer"]),
+  async (req, res) => {
+    try {
+      const { motivo, observacion, fotoEvidencia } = req.body;
+
+      if (!motivo || !fotoEvidencia) {
+        return res.status(400).json({
+          status: "error",
+          message: "Los campos motivo y foto de evidencia son obligatorios",
+        });
+      }
+
+      const despacho = await Despacho.findById(req.params.id);
+
+      if (!despacho) {
+        return res.status(404).json({
+          status: "error",
+          message: "Despacho no encontrado",
+        });
+      }
+
+      if (!despacho.rutaAsignada) {
+        return res.status(400).json({
+          status: "error",
+          message: "El despacho no est  asignado a ninguna ruta",
+        });
+      }
+
+      if (despacho.estado === "entregado" || despacho.estado === "no_entregado") {
+        return res.status(400).json({
+          status: "error",
+          message: "El despacho ya fue marcado como entregado/no entregado",
+        });
+      }
+
+      despacho.noEntrega = {
+        motivo: String(motivo).trim(),
+        observacion: observacion ? String(observacion).trim() : "",
+        fotoEvidencia,
+        fechaNoEntrega: new Date(),
+      };
+      despacho.estado = "no_entregado";
+
+      await despacho.save();
+
+      console.log(
+        `⚠️ Despacho ${despacho.FolioNum} marcado como no entregado. Motivo: ${motivo}`
+      );
+
+      const ruta = await Ruta.findById(despacho.rutaAsignada).populate("despachos");
+
+      if (ruta) {
+        const todosFinalizados = ruta.despachos.every((d) => isDespachoTerminal(d.estado));
+
+        if (todosFinalizados && ruta.estado !== "finalizada") {
+          ruta.estado = "finalizada";
+          ruta.fechaFinalizacion = new Date();
+          await ruta.save();
+          console.log(`✅ Ruta ${ruta.numeroRuta} finalizada autom ticamente`);
+        }
+      }
+
+      res.json({
+        status: "success",
+        message: "Despacho marcado como no entregado",
+        data: despacho,
+      });
+    } catch (error) {
+      console.error("❌ Error al marcar despacho como no entregado:", error);
+      res.status(500).json({
+        status: "error",
+        message: "Error al marcar despacho como no entregado",
         error: error.message,
       });
     }
@@ -965,7 +1093,11 @@ app.post(
               estado: "pendiente",
               rutaAsignada: null,
               empresaReparto: null
-            }
+            },
+            $unset: {
+              entrega: "",
+              noEntrega: ""
+            },
           }
         );
       }

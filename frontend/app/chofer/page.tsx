@@ -5,6 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { Button, Card, Modal } from "@/components/ui";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { RutaEntregasPreview } from "@/components/chofer";
 import { rutaService, type Ruta } from "@/services/rutaService";
 import { getNombreCompleto } from "@/services/userService";
 
@@ -42,9 +43,13 @@ export default function ChoferPage() {
       const data = await rutaService.getAll();
 
       // Filtrar solo las rutas del chofer actual
+      const usuario = user!.usuario;
       const nombreUsuario = getNombreCompleto(user!);
       const rutasDelChofer = data.filter(
-        (r) => r.conductor === nombreUsuario || r.conductor === "Pendiente"
+        (r) =>
+          r.conductor === usuario ||
+          r.conductor === nombreUsuario ||
+          r.conductor === "Pendiente"
       );
 
       // Ordenar: rutas iniciadas primero, luego pendientes, luego finalizadas/canceladas
@@ -341,6 +346,8 @@ export default function ChoferPage() {
                           </p>
                         </div>
                       </div>
+
+                      <RutaEntregasPreview despachos={ruta.despachos} previewCount={3} />
 
                       {/* Acciones - Botones con naranja como color principal */}
                       <div className="flex flex-col sm:flex-row gap-2 md:gap-3">

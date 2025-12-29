@@ -1,13 +1,11 @@
 import { useState } from "react";
 import { rutaService, type Ruta } from "@/services/rutaService";
-import { despachoService } from "@/services/despachoService";
 
 export function useRutas() {
   const [rutas, setRutas] = useState<Ruta[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [cancelando, setCancelando] = useState<string | null>(null);
-  const [entregando, setEntregando] = useState<string | null>(null);
 
   const loadRutas = async () => {
     try {
@@ -49,38 +47,13 @@ export function useRutas() {
     }
   };
 
-  const handleMarcarEntregado = async (
-    despachoId: string,
-    folioNum: string | number
-  ) => {
-    if (
-      !confirm(`¿Marcar el despacho ${folioNum} como entregado?
-
-Nota: Podrás agregar los datos del receptor después.`)
-    ) {
-      return;
-    }
-
-    try {
-      setEntregando(despachoId);
-      await despachoService.marcarComoEntregado(despachoId);
-      alert(`Despacho ${folioNum} marcado como entregado`);
-      await loadRutas();
-    } catch (err: any) {
-      alert(`Error: ${err.message || "Error al marcar como entregado"}`);
-    } finally {
-      setEntregando(null);
-    }
-  };
-
   return {
     rutas,
     loading,
     error,
     cancelando,
-    entregando,
     loadRutas,
     handleCancelar,
-    handleMarcarEntregado,
   };
 }
+

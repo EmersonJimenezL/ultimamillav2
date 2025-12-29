@@ -42,22 +42,30 @@ export default function RutaDetallePage() {
   const {
     despachos,
     despachosEntregados,
+    despachosNoEntregados,
     totalDespachos,
-    todosDespachosEntregados,
+    todosDespachosFinalizados,
   } = useMemo(() => {
     const despachos = Array.isArray(ruta?.despachos) ? ruta.despachos : [];
     const despachosEntregados = despachos.filter(
       (d: any) => d.estado === "entregado"
     ).length;
+    const despachosNoEntregados = despachos.filter(
+      (d: any) => d.estado === "no_entregado"
+    ).length;
     const totalDespachos = despachos.length;
-    const todosDespachosEntregados =
-      despachosEntregados === totalDespachos && totalDespachos > 0;
+    const despachosFinalizados = despachos.filter((d: any) =>
+      ["entregado", "no_entregado", "cancelado"].includes(d.estado)
+    ).length;
+    const todosDespachosFinalizados =
+      despachosFinalizados === totalDespachos && totalDespachos > 0;
 
     return {
       despachos,
       despachosEntregados,
+      despachosNoEntregados,
       totalDespachos,
-      todosDespachosEntregados,
+      todosDespachosFinalizados,
     };
   }, [ruta]);
 
@@ -221,7 +229,7 @@ export default function RutaDetallePage() {
             />
 
             {/* Botón de finalizar ruta */}
-            {ruta.estado === "iniciada" && todosDespachosEntregados && (
+            {ruta.estado === "iniciada" && todosDespachosFinalizados && (
               <div className="mb-4 md:mb-6">
                 <Button
                   onClick={() => setShowFinalizarModal(true)}

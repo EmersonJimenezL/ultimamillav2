@@ -14,6 +14,7 @@ function getEstadoBadgeColor(estado: string): string {
     pendiente: "bg-yellow-100 text-yellow-800",
     asignado: "bg-blue-100 text-blue-800",
     entregado: "bg-green-100 text-green-800",
+    no_entregado: "bg-amber-100 text-amber-800",
     cancelado: "bg-red-100 text-red-800",
   };
   return colores[estado] || "bg-gray-100 text-gray-800";
@@ -100,7 +101,8 @@ export function DespachoCard({
       </div>
 
       {/* Botón de entregar con gradiente naranja */}
-      {despacho.estado !== "entregado" && rutaEstado === "iniciada" && (
+      {!["entregado", "no_entregado", "cancelado"].includes(despacho.estado) &&
+        rutaEstado === "iniciada" && (
         <Button
           onClick={() => onEntregar(despacho)}
           variant="primary"
@@ -142,6 +144,33 @@ export function DespachoCard({
                     minute: "2-digit",
                   }
                 )}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Info si está marcado como no entregado */}
+      {despacho.estado === "no_entregado" && despacho.noEntrega && (
+        <div className="pt-3 md:pt-4 border-t-2 border-amber-200 mt-3 md:mt-4 bg-amber-50 -mx-4 -mb-4 px-4 pb-4 rounded-b-lg">
+          <p className="text-xs md:text-sm text-amber-800 font-bold mb-2 flex items-center gap-1.5">
+            <span className="text-base md:text-lg">!</span> No entregado
+          </p>
+          <div className="space-y-1">
+            <p className="text-xs md:text-sm text-gray-700">
+              <span className="font-medium">Motivo:</span>{" "}
+              {despacho.noEntrega.motivo}
+            </p>
+            {despacho.noEntrega.observacion && (
+              <p className="text-xs md:text-sm text-gray-700">
+                <span className="font-medium">Observación:</span>{" "}
+                {despacho.noEntrega.observacion}
+              </p>
+            )}
+            {despacho.noEntrega.fechaNoEntrega && (
+              <p className="text-xs md:text-sm text-gray-700">
+                <span className="font-medium">Hora:</span>{" "}
+                {new Date(despacho.noEntrega.fechaNoEntrega).toLocaleString("es-CL")}
               </p>
             )}
           </div>
