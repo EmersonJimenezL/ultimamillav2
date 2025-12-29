@@ -1,6 +1,7 @@
 import { Modal, Button } from "@/components/ui";
 import { getNombreCompleto, type User } from "@/services/userService";
 import type { EmpresaReparto } from "@/services/empresaService";
+import { isEmpresaPropia } from "@/utils";
 
 interface ModalCrearRutaProps {
   isOpen: boolean;
@@ -35,6 +36,12 @@ export function ModalCrearRuta({
   onExternoChange,
   onSubmit,
 }: ModalCrearRutaProps) {
+  const empresaSeleccionada = empresas.find((e) => e._id === selectedEmpresa);
+  const empresaEsPropia = isEmpresaPropia(empresaSeleccionada);
+  const conductorRequerido = empresaEsPropia;
+  const conductorDisabled = !empresaEsPropia;
+  const externoDisabled = empresaEsPropia;
+
   return (
     <Modal
       isOpen={isOpen}
@@ -78,13 +85,14 @@ export function ModalCrearRuta({
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Conductor <span className="text-red-500">*</span>
+                Conductor{" "}
+                {conductorRequerido && <span className="text-red-500">*</span>}
               </label>
               <select
                 value={selectedChofer}
                 onChange={(e) => onChoferChange(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
-                disabled={creating}
+                disabled={creating || conductorDisabled}
               >
                 <option value="">Selecciona un conductor</option>
                 {choferes.map((chofer) => (
@@ -93,6 +101,12 @@ export function ModalCrearRuta({
                   </option>
                 ))}
               </select>
+              {!empresaEsPropia && (
+                <p className="text-xs text-gray-600 mt-1">
+                  Para empresas externas, el chofer se registra al iniciar la
+                  ruta.
+                </p>
+              )}
             </div>
 
             <div className="flex items-center gap-2">
@@ -101,7 +115,7 @@ export function ModalCrearRuta({
                 checked={esChoferExterno}
                 onChange={(e) => onExternoChange(e.target.checked)}
                 className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
-                disabled={creating}
+                disabled={creating || externoDisabled}
               />
               <label className="text-sm text-gray-700">
                 Es chofer externo (de otra empresa)

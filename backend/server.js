@@ -113,6 +113,31 @@ function userHasRole(user, role) {
   return roles.includes(role);
 }
 
+function normalizeRut(rut) {
+  return String(rut).replace(/[.\-\s]/g, "").toUpperCase();
+}
+
+function isEmpresaPropia(empresa) {
+  if (!empresa) return false;
+
+  const rutPropio = process.env.EMPRESA_PROPIA_RUT;
+  if (rutPropio && normalizeRut(empresa.rut) === normalizeRut(rutPropio)) {
+    return true;
+  }
+
+  const nombrePropio = process.env.EMPRESA_PROPIA_NOMBRE;
+  if (
+    nombrePropio &&
+    String(empresa.razonSocial || "")
+      .toLowerCase()
+      .includes(String(nombrePropio).toLowerCase())
+  ) {
+    return true;
+  }
+
+  return String(empresa.razonSocial || "").toLowerCase().includes("vivipra");
+}
+
 // Función para sincronizar despachos desde el endpoint externo
 async function sincronizarDespachos() {
   try {
@@ -673,7 +698,35 @@ app.post(
         });
       }
 
-      const ruta = new Ruta({ ...req.body, asignadoPor });
+      const empresa = await EmpresaReparto.findById(req.body.empresaReparto);
+      if (!empresa) {
+        return res.status(400).json({
+          status: "error",
+          message: "Empresa de reparto no encontrada",
+        });
+      }
+
+      const empresaEsPropia = isEmpresaPropia(empresa);
+
+      if (empresaEsPropia) {
+        if (!req.body.conductor || String(req.body.conductor).trim() === "") {
+          return res.status(400).json({
+            status: "error",
+            message: "Debes seleccionar un conductor para la empresa propia",
+          });
+        }
+      }
+
+      const conductor = empresaEsPropia
+        ? String(req.body.conductor).trim()
+        : "Pendiente";
+
+      const ruta = new Ruta({
+        ...req.body,
+        asignadoPor,
+        conductor,
+        esChoferExterno: empresaEsPropia ? Boolean(req.body.esChoferExterno) : true,
+      });
       await ruta.save();
 
       console.log("✅ Ruta creada exitosamente:", ruta._id);

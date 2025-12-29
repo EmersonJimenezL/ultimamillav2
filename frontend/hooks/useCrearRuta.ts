@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { empresaService, type EmpresaReparto } from "@/services/empresaService";
 import { userService, type User } from "@/services/userService";
 import { rutaService } from "@/services/rutaService";
+import { isEmpresaPropia } from "@/utils";
 
 export function useCrearRuta() {
   const [showModal, setShowModal] = useState(false);
@@ -12,6 +13,20 @@ export function useCrearRuta() {
   const [selectedChofer, setSelectedChofer] = useState("");
   const [esChoferExterno, setEsChoferExterno] = useState(false);
   const [creatingRuta, setCreatingRuta] = useState(false);
+
+  const empresaSeleccionada = empresas.find((e) => e._id === selectedEmpresa);
+  const empresaEsPropia = isEmpresaPropia(empresaSeleccionada);
+
+  useEffect(() => {
+    if (!selectedEmpresa) return;
+
+    if (!empresaEsPropia) {
+      setEsChoferExterno(true);
+      setSelectedChofer("");
+    } else {
+      setEsChoferExterno(false);
+    }
+  }, [selectedEmpresa, empresaEsPropia]);
 
   const openModal = async () => {
     setShowModal(true);
@@ -50,8 +65,8 @@ export function useCrearRuta() {
       throw new Error("Debes seleccionar una empresa de reparto");
     }
 
-    if (!selectedChofer) {
-      throw new Error("Debes seleccionar un conductor");
+    if (empresaEsPropia && !selectedChofer) {
+      throw new Error("Debes seleccionar un conductor (empresa propia)");
     }
 
     try {
@@ -59,10 +74,10 @@ export function useCrearRuta() {
 
       await rutaService.create({
         empresaReparto: selectedEmpresa,
-        conductor: selectedChofer,
+        ...(empresaEsPropia ? { conductor: selectedChofer } : {}),
         despachos: despachoIds,
         estado: "pendiente",
-        esChoferExterno: esChoferExterno,
+        esChoferExterno: empresaEsPropia ? esChoferExterno : true,
       });
 
       return true;
@@ -82,6 +97,7 @@ export function useCrearRuta() {
     setSelectedChofer,
     esChoferExterno,
     setEsChoferExterno,
+    empresaEsPropia,
     creatingRuta,
     openModal,
     closeModal,

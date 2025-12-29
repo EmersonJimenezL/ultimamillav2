@@ -119,7 +119,7 @@ function MetricaPreparacion({
 
   return (
     <div className="p-2 md:p-3 bg-white rounded-lg border border-orange-200">
-      <p className="text-xs text-gray-600 mb-1">⏳ Tiempo de preparación</p>
+      <p className="text-xs text-gray-600 mb-1">⏳ Tiempo asignación → inicio</p>
       <p className="font-bold text-xs md:text-sm text-orange-600">
         {minutosHastaIniciar} min
       </p>
