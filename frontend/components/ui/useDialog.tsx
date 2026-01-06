@@ -159,6 +159,7 @@ export function useDialog() {
       onClose={onCancel}
       title={state.title || "Aviso"}
       size="sm"
+      zIndex={60}
       footer={
         state.type === "alert" ? (
           <Button onClick={onConfirm} variant="primary" size="sm">

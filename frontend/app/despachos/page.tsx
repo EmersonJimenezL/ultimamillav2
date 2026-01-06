@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Button, useDialog } from "@/components/ui";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
@@ -11,6 +11,7 @@ import { NavBar } from "@/components/layout";
 export default function DespachosPage() {
   const router = useRouter();
   const { dialog, showAlert } = useDialog();
+  const creatingRef = useRef(false);
   const [selectedDespachos, setSelectedDespachos] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(20);
@@ -71,8 +72,11 @@ export default function DespachosPage() {
   };
 
   const handleCrearRuta = async () => {
+    if (creatingRef.current || creatingRuta) return;
+    creatingRef.current = true;
     try {
-      await crearRuta(selectedDespachos);
+      const created = await crearRuta(selectedDespachos);
+      if (!created) return;
       await showAlert(`Ruta creada exitosamente con ${selectedDespachos.length} despachos`, {
         variant: "success",
       });
@@ -82,6 +86,8 @@ export default function DespachosPage() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       await showAlert(`Error: ${err.message}`, { title: "Error", variant: "danger" });
+    } finally {
+      creatingRef.current = false;
     }
   };
 

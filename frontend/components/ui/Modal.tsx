@@ -11,6 +11,7 @@ interface ModalProps {
   children: ReactNode;
   footer?: ReactNode;
   size?: "sm" | "md" | "lg" | "xl";
+  zIndex?: number;
 }
 
 export function Modal({
@@ -20,6 +21,7 @@ export function Modal({
   children,
   footer,
   size = "md",
+  zIndex = 50,
 }: ModalProps) {
   // Cerrar con ESC
   useEffect(() => {
@@ -56,7 +58,7 @@ export function Modal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
+    <div className="fixed inset-0 overflow-y-auto" style={{ zIndex }}>
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"

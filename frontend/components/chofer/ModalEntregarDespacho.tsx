@@ -150,7 +150,7 @@ export function ModalEntregarDespacho({
                 type="text"
                 value={formatRut(formData.receptorRut)}
                 onChange={(e) => handleRutChange(e.target.value.replace(/[.-]/g, ""))}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
+                className={`w-full px-3 py-2 border rounded-lg bg-gray-100 text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 ${
                   errors.rutError
                     ? "border-red-300 focus:ring-red-500"
                     : "border-gray-300 focus:ring-blue-500"
@@ -169,7 +169,7 @@ export function ModalEntregarDespacho({
                 type="text"
                 value={formData.receptorNombre}
                 onChange={(e) => handleNombreChange(e.target.value)}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
+                className={`w-full px-3 py-2 border rounded-lg bg-gray-100 text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 ${
                   errors.nombreError
                     ? "border-red-300 focus:ring-red-500"
                     : "border-gray-300 focus:ring-blue-500"
@@ -190,7 +190,7 @@ export function ModalEntregarDespacho({
                 type="text"
                 value={formData.receptorApellido}
                 onChange={(e) => handleApellidoChange(e.target.value)}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
+                className={`w-full px-3 py-2 border rounded-lg bg-gray-100 text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 ${
                   errors.apellidoError
                     ? "border-red-300 focus:ring-red-500"
                     : "border-gray-300 focus:ring-blue-500"
@@ -212,7 +212,7 @@ export function ModalEntregarDespacho({
               <select
                 value={formData.motivoNoEntrega}
                 onChange={(e) => handleMotivoNoEntregaChange(e.target.value)}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
+                className={`w-full px-3 py-2 border rounded-lg bg-gray-100 text-black focus:outline-none focus:ring-2 ${
                   errors.motivoError
                     ? "border-red-300 focus:ring-red-500"
                     : "border-gray-300 focus:ring-blue-500"
@@ -236,7 +236,7 @@ export function ModalEntregarDespacho({
               <textarea
                 value={formData.observacionNoEntrega}
                 onChange={(e) => handleObservacionNoEntregaChange(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Opcional: detalles del intento de entrega"
                 rows={3}
                 disabled={entregando}

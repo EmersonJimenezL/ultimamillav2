@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { empresaService, type EmpresaReparto } from "@/services/empresaService";
 import { userService, type User } from "@/services/userService";
 import { rutaService } from "@/services/rutaService";
@@ -13,6 +13,7 @@ export function useCrearRuta() {
   const [selectedChofer, setSelectedChofer] = useState("");
   const [esChoferExterno, setEsChoferExterno] = useState(false);
   const [creatingRuta, setCreatingRuta] = useState(false);
+  const creatingRef = useRef(false);
 
   const empresaSeleccionada = empresas.find((e) => e._id === selectedEmpresa);
   const empresaEsPropia = isEmpresaPropia(empresaSeleccionada);
@@ -57,6 +58,10 @@ export function useCrearRuta() {
   };
 
   const crearRuta = async (despachoIds: string[]) => {
+    if (creatingRef.current) {
+      return false;
+    }
+
     if (despachoIds.length === 0) {
       throw new Error("Debes seleccionar al menos un despacho");
     }
@@ -70,6 +75,7 @@ export function useCrearRuta() {
     }
 
     try {
+      creatingRef.current = true;
       setCreatingRuta(true);
 
       await rutaService.create({
@@ -83,6 +89,7 @@ export function useCrearRuta() {
       return true;
     } finally {
       setCreatingRuta(false);
+      creatingRef.current = false;
     }
   };
 
