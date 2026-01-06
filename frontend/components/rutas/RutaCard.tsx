@@ -1,7 +1,11 @@
-import { Button } from "@/components/ui";
+import { useMemo, useState } from "react";
+import { Button, useDialog } from "@/components/ui";
 import { MetricasTiempo } from "./MetricasTiempo";
 import { getEstadoBadgeColor, formatRut } from "@/utils";
+import { isEmpresaPropia } from "@/utils/empresaUtils";
+import { getErrorMessage } from "@/utils/errorUtils";
 import type { Ruta, DespachoConEntrega } from "@/services/rutaService";
+import { rutaService } from "@/services/rutaService";
 
 interface RutaCardProps {
   ruta: Ruta;
@@ -10,6 +14,7 @@ interface RutaCardProps {
   onCancelar: (rutaId: string, numeroRuta?: string) => void;
   onAgregarDatos: (despacho: DespachoConEntrega) => void;
   cancelando: boolean;
+  onReload: () => Promise<void>;
 }
 
 export function RutaCard({
@@ -19,7 +24,14 @@ export function RutaCard({
   onCancelar,
   onAgregarDatos,
   cancelando,
+  onReload,
 }: RutaCardProps) {
+  const [procesandoDespacho, setProcesandoDespacho] = useState<string | null>(
+    null
+  );
+  const [finalizando, setFinalizando] = useState(false);
+  const { dialog, showAlert, showConfirm, showPrompt } = useDialog();
+
   const conductorLabel =
     ruta.nombreConductor && ruta.esChoferExterno
       ? `${ruta.nombreConductor} (${ruta.conductor})`
@@ -30,11 +42,90 @@ export function RutaCard({
       ) as DespachoConEntrega[])
     : [];
 
-  const despachosEntregados = despachos.filter((d) => d.estado === "entregado").length;
+  const despachosEntregados = despachos.filter(
+    (d) => d.estado === "entregado"
+  ).length;
   const totalDespachos = despachos.length;
+
+  const esRutaExterna = useMemo(() => {
+    if (!ruta.empresaReparto || typeof ruta.empresaReparto !== "object")
+      return false;
+    return !isEmpresaPropia({
+      rut: ruta.empresaReparto.rut,
+      razonSocial: ruta.empresaReparto.razonSocial,
+      usuarioCuenta: ruta.empresaReparto.usuarioCuenta,
+    });
+  }, [ruta.empresaReparto]);
+
+  const puedeGestionarExterna =
+    esRutaExterna &&
+    ruta.estado !== "cancelada" &&
+    ruta.estado !== "finalizada";
+
+  const handleLiberarDespacho = async (despacho: DespachoConEntrega) => {
+    if (!puedeGestionarExterna) return;
+
+    const ok = await showConfirm(
+      `¿Marcar como no entregado y liberar el despacho ${despacho.FolioNum} para reasignarlo?`,
+      { variant: "warning" }
+    );
+    if (!ok) return;
+
+    try {
+      setProcesandoDespacho(despacho._id);
+      const result = await rutaService.reconciliarExterna(
+        ruta._id,
+        [despacho._id],
+        false
+      );
+      await showAlert(result.message, { variant: "success" });
+      await onReload();
+    } catch (err) {
+      await showAlert(getErrorMessage(err), { title: "Error", variant: "danger" });
+    } finally {
+      setProcesandoDespacho(null);
+    }
+  };
+
+  const handleFinalizarRuta = async () => {
+    if (!puedeGestionarExterna) return;
+
+    const ok = await showConfirm("¿Finalizar esta ruta?", { variant: "warning" });
+    if (!ok) return;
+
+    try {
+      setFinalizando(true);
+      const numeroDocumento = await showPrompt(
+        "Ingresa el número de documento asociado a la empresa externa (opcional).",
+        {
+          title: "Finalizar ruta externa",
+          label: "Número de documento (opcional)",
+          placeholder: "Ej: Orden 12345 / Factura 67890",
+          confirmText: "Finalizar",
+          cancelText: "Cancelar",
+          variant: "info",
+        }
+      );
+      if (numeroDocumento === null) return;
+
+      const result = await rutaService.reconciliarExterna(
+        ruta._id,
+        [],
+        true,
+        numeroDocumento
+      );
+      await showAlert(result.message, { variant: "success" });
+      await onReload();
+    } catch (err) {
+      await showAlert(getErrorMessage(err), { title: "Error", variant: "danger" });
+    } finally {
+      setFinalizando(false);
+    }
+  };
 
   return (
     <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow">
+      {dialog}
       <div
         className="p-4 cursor-pointer hover:bg-gray-50 transition-colors"
         onClick={onToggleExpand}
@@ -62,7 +153,9 @@ export function RutaCard({
               {ruta.patente && (
                 <div>
                   <span className="text-gray-600">Patente:</span>
-                  <p className="font-semibold text-gray-900 uppercase">{ruta.patente}</p>
+                  <p className="font-semibold text-gray-900 uppercase">
+                    {ruta.patente}
+                  </p>
                 </div>
               )}
               <div>
@@ -86,9 +179,16 @@ export function RutaCard({
 
           <button
             className="text-gray-400 hover:text-gray-600 transition-transform"
-            style={{ transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)" }}
+            style={{
+              transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)",
+            }}
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -110,19 +210,36 @@ export function RutaCard({
               despachos={despachos}
             />
 
-            {ruta.estado !== "cancelada" && ruta.estado !== "finalizada" && (
-              <Button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onCancelar(ruta._id, ruta.numeroRuta);
-                }}
-                variant="danger"
-                size="sm"
-                disabled={cancelando}
-              >
-                {cancelando ? "Cancelando..." : "❌ Cancelar Ruta"}
-              </Button>
-            )}
+            <div className="flex flex-wrap gap-2">
+              {puedeGestionarExterna && (
+                <Button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    void handleFinalizarRuta();
+                  }}
+                  variant="primary"
+                  size="sm"
+                  disabled={finalizando}
+                  className="from-green-500! via-emerald-500! to-green-700! hover:from-green-600! hover:via-emerald-600! hover:to-green-800!"
+                >
+                  {finalizando ? "Finalizando..." : "Finalizar Ruta"}
+                </Button>
+              )}
+
+              {ruta.estado !== "cancelada" && ruta.estado !== "finalizada" && (
+                <Button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onCancelar(ruta._id, ruta.numeroRuta);
+                  }}
+                  variant="danger"
+                  size="sm"
+                  disabled={cancelando}
+                >
+                  {cancelando ? "Cancelando..." : "❌ Cancelar Ruta"}
+                </Button>
+              )}
+            </div>
 
             {despachos.length > 0 && (
               <div className="space-y-2">
@@ -137,8 +254,8 @@ export function RutaCard({
                         despacho.estado === "entregado"
                           ? "bg-green-50 border-green-200"
                           : despacho.estado === "no_entregado"
-                            ? "bg-amber-50 border-amber-200"
-                            : "bg-white border-gray-200"
+                          ? "bg-amber-50 border-amber-200"
+                          : "bg-white border-gray-200"
                       }`}
                     >
                       <div className="flex items-start justify-between gap-3">
@@ -158,51 +275,83 @@ export function RutaCard({
                               {String(despacho.estado).toUpperCase()}
                             </span>
                           </div>
-                          <p className="text-sm text-gray-700">{despacho.CardName}</p>
-                          <p className="text-xs text-gray-600">📍 {despacho.Address2}</p>
+                          <p className="text-sm text-gray-700">
+                            {despacho.CardName}
+                          </p>
+                          <p className="text-xs text-gray-600">
+                            📍 {despacho.Address2}
+                          </p>
 
-                          {despacho.estado === "entregado" && despacho.entrega && (
-                            <div className="mt-2 p-2 bg-green-100 rounded text-xs space-y-1">
-                              <p className="font-semibold text-green-800">✓ Entregado</p>
-                              {despacho.entrega.receptorNombre && (
-                                <p className="text-green-700">
-                                  Receptor: {despacho.entrega.receptorNombre}{" "}
-                                  {despacho.entrega.receptorApellido}
+                          {despacho.estado === "entregado" &&
+                            despacho.entrega && (
+                              <div className="mt-2 p-2 bg-green-100 rounded text-xs space-y-1">
+                                <p className="font-semibold text-green-800">
+                                  ✓ Entregado
                                 </p>
-                              )}
-                              {despacho.entrega.receptorRut && (
-                                <p className="text-green-700">
-                                  RUT: {formatRut(despacho.entrega.receptorRut)}
-                                </p>
-                              )}
-                              {despacho.entrega.fechaEntrega && (
-                                <p className="text-green-700">
-                                  {new Date(despacho.entrega.fechaEntrega).toLocaleString("es-CL")}
-                                </p>
-                              )}
-                            </div>
-                          )}
+                                {despacho.entrega.receptorNombre && (
+                                  <p className="text-green-700">
+                                    Receptor: {despacho.entrega.receptorNombre}{" "}
+                                    {despacho.entrega.receptorApellido}
+                                  </p>
+                                )}
+                                {despacho.entrega.receptorRut && (
+                                  <p className="text-green-700">
+                                    RUT:{" "}
+                                    {formatRut(despacho.entrega.receptorRut)}
+                                  </p>
+                                )}
+                                {despacho.entrega.fechaEntrega && (
+                                  <p className="text-green-700">
+                                    {new Date(
+                                      despacho.entrega.fechaEntrega
+                                    ).toLocaleString("es-CL")}
+                                  </p>
+                                )}
+                              </div>
+                            )}
 
-                          {despacho.estado === "no_entregado" && despacho.noEntrega && (
-                            <div className="mt-2 p-2 bg-amber-100 rounded text-xs space-y-1">
-                              <p className="font-semibold text-amber-900">⚠ No entregado</p>
-                              {despacho.noEntrega.motivo && (
-                                <p className="text-amber-900">
-                                  Motivo: {despacho.noEntrega.motivo}
+                          {despacho.estado === "no_entregado" &&
+                            despacho.noEntrega && (
+                              <div className="mt-2 p-2 bg-amber-100 rounded text-xs space-y-1">
+                                <p className="font-semibold text-amber-900">
+                                  ⚠ No entregado
                                 </p>
-                              )}
-                              {despacho.noEntrega.fechaNoEntrega && (
-                                <p className="text-amber-900">
-                                  {new Date(despacho.noEntrega.fechaNoEntrega).toLocaleString(
-                                    "es-CL"
-                                  )}
-                                </p>
-                              )}
-                            </div>
-                          )}
+                                {despacho.noEntrega.motivo && (
+                                  <p className="text-amber-900">
+                                    Motivo: {despacho.noEntrega.motivo}
+                                  </p>
+                                )}
+                                {despacho.noEntrega.fechaNoEntrega && (
+                                  <p className="text-amber-900">
+                                    {new Date(
+                                      despacho.noEntrega.fechaNoEntrega
+                                    ).toLocaleString("es-CL")}
+                                  </p>
+                                )}
+                              </div>
+                            )}
                         </div>
 
                         <div className="flex flex-col gap-1">
+                          {puedeGestionarExterna &&
+                            !["entregado", "cancelado"].includes(
+                              despacho.estado
+                            ) && (
+                              <Button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  void handleLiberarDespacho(despacho);
+                                }}
+                                variant="outline"
+                                size="sm"
+                                disabled={procesandoDespacho === despacho._id}
+                                className="border-amber-500! text-amber-900! hover:bg-amber-50!"
+                              >
+                                {procesandoDespacho === despacho._id
+                                  ? "Liberando..."
+                                  : "Liberar"}
+                              </Button>
+                            )}
                           {despacho.estado === "entregado" && (
                             <Button
                               onClick={(e) => {
@@ -221,7 +370,8 @@ export function RutaCard({
                   ))}
                 </div>
                 <p className="text-xs text-gray-500">
-                  Las entregas/no entregas solo se registran desde el perfil del chofer.
+                  Las entregas/no entregas solo se registran desde el perfil del
+                  chofer.
                 </p>
               </div>
             )}

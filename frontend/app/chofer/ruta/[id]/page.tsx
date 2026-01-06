@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter, useParams } from "next/navigation";
-import { Button, Card, Modal } from "@/components/ui";
+import { Button, Card, Modal, useDialog } from "@/components/ui";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { MetricasTiempo } from "@/components/rutas/MetricasTiempo";
 import {
@@ -23,6 +23,7 @@ export default function RutaDetallePage() {
   const router = useRouter();
   const params = useParams();
   const rutaId = params?.id as string;
+  const { dialog, showAlert } = useDialog();
 
   const { ruta, loading, error, finalizando, loadRuta, finalizarRuta } =
     useRutaChofer(rutaId);
@@ -88,7 +89,10 @@ export default function RutaDetallePage() {
   const handleAbrirRutaCompleta = () => {
     if (!ruta) return;
     const direcciones = extraerDireccionesValidas(despachos);
-    abrirRutaCompleta(direcciones);
+    const result = abrirRutaCompleta(direcciones);
+    if (!result.opened) {
+      void showAlert(result.error ?? "No se pudo abrir la ruta en el mapa", { variant: "warning" });
+    }
   };
 
   const handleFinalizarRuta = async () => {
@@ -138,6 +142,7 @@ export default function RutaDetallePage() {
   return (
     <ProtectedRoute allowedRoles={["chofer"]}>
       <div className="min-h-screen bg-white">
+        {dialog}
         {/* Header responsive */}
         <header className="bg-white shadow-md border-b-2 border-orange-500 sticky top-0 z-10">
           <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-3 md:py-4">

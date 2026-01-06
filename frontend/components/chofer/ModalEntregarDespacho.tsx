@@ -1,4 +1,4 @@
-import { Modal, Button } from "@/components/ui";
+import { Modal, Button, useDialog } from "@/components/ui";
 import { useEntregaDespacho } from "@/hooks/useEntregaDespacho";
 import type { DespachoConEntrega } from "@/services/rutaService";
 
@@ -41,6 +41,7 @@ export function ModalEntregarDespacho({
     entregarDespacho,
     marcarNoEntregado,
   } = useEntregaDespacho();
+  const { dialog, showAlert } = useDialog();
 
   const handleClose = () => {
     resetForm();
@@ -57,17 +58,18 @@ export function ModalEntregarDespacho({
           : await marcarNoEntregado(despacho._id);
 
       if (ok) {
-        alert(
+        await showAlert(
           formData.tipo === "entregado"
             ? "Despacho entregado exitosamente"
-            : "Despacho marcado como no entregado"
+            : "Despacho marcado como no entregado",
+          { variant: "success" }
         );
         handleClose();
         onSuccess();
       }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
-      alert(`Error: ${err.message}`);
+      await showAlert(`Error: ${err.message}`, { title: "Error", variant: "danger" });
     }
   };
 
@@ -84,12 +86,14 @@ export function ModalEntregarDespacho({
     formData.tipo === "entregado" ? errors.fotoEntregaError : errors.fotoEvidenciaError;
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={handleClose}
-      title="Gestionar Despacho"
-      size="lg"
-    >
+    <>
+      {dialog}
+      <Modal
+        isOpen={isOpen}
+        onClose={handleClose}
+        title="Gestionar Despacho"
+        size="lg"
+      >
       <div className="space-y-4">
         <div className="bg-gray-50 p-4 rounded-lg text-gray-900">
           <h3 className="font-semibold text-gray-900 mb-2">Información del Despacho</h3>
@@ -327,6 +331,7 @@ export function ModalEntregarDespacho({
           </Button>
         </div>
       </div>
-    </Modal>
+      </Modal>
+    </>
   );
 }

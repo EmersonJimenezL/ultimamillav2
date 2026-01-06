@@ -162,6 +162,11 @@ const despachoSchema = new mongoose.Schema(
         type: String,
         trim: true,
       },
+      documentoExterno: {
+        type: String,
+        trim: true,
+        default: "",
+      },
       fotoEntrega: {
         type: String, // Base64 de la imagen
       },

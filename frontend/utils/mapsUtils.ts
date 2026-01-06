@@ -18,14 +18,13 @@ export function abrirEnMapa(direccion: string) {
  */
 export function abrirRutaCompleta(direcciones: string[]) {
   if (direcciones.length === 0) {
-    alert("No hay direcciones válidas para mostrar en el mapa");
-    return;
+    return { opened: false as const, error: "No hay direcciones válidas para mostrar en el mapa" };
   }
 
   // Si solo hay una dirección, abrir directamente
   if (direcciones.length === 1) {
     abrirEnMapa(direcciones[0]);
-    return;
+    return { opened: true as const };
   }
 
   // Para múltiples direcciones, crear URL con waypoints
@@ -44,6 +43,7 @@ export function abrirRutaCompleta(direcciones: string[]) {
     : `https://www.google.com/maps/dir/?api=1&origin=${origen}&destination=${destino}`;
 
   window.open(url, "_blank");
+  return { opened: true as const };
 }
 
 /**

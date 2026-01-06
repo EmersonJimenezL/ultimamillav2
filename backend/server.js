@@ -159,6 +159,26 @@ function getUserKey(req) {
     : null;
 }
 
+function isPrivilegedUser(user) {
+  return (
+    userHasRole(user, "admin") ||
+    userHasRole(user, "adminBodega") ||
+    userHasRole(user, "subBodega")
+  );
+}
+
+function rutaPerteneceAUsuario(ruta, userKey) {
+  if (!ruta || !userKey) return false;
+
+  if (String(ruta.conductor || "").toLowerCase() === userKey) return true;
+
+  if (ruta.empresaReparto && ruta.empresaReparto.usuarioCuenta) {
+    return String(ruta.empresaReparto.usuarioCuenta).toLowerCase() === userKey;
+  }
+
+  return false;
+}
+
 // Función para sincronizar despachos desde el endpoint externo
 async function sincronizarDespachos() {
   try {
@@ -1050,6 +1070,237 @@ app.post(
       res.status(500).json({
         status: "error",
         message: "Error al iniciar ruta",
+        error: error.message,
+      });
+    }
+  }
+);
+
+// POST /api/rutas/:id/finalizar - Finalizar ruta (chofer o admin para rutas externas)
+app.post(
+  "/api/rutas/:id/finalizar",
+  authMiddleware,
+  requireRoles(["admin", "chofer", "subBodega", "adminBodega"]),
+  async (req, res) => {
+    try {
+      const ruta = await Ruta.findById(req.params.id)
+        .populate("empresaReparto")
+        .populate("despachos");
+
+      if (!ruta) {
+        return res.status(404).json({
+          status: "error",
+          message: "Ruta no encontrada",
+        });
+      }
+
+      const userKey = getUserKey(req);
+      const privileged = isPrivilegedUser(req.user);
+
+      if (!privileged) {
+        if (!rutaPerteneceAUsuario(ruta, userKey)) {
+          return res.status(403).json({
+            status: "error",
+            message: "No tienes permisos para finalizar esta ruta",
+          });
+        }
+      } else {
+        // Solo permitido para rutas de empresa externa (no Vivipra)
+        if (ruta.empresaReparto && isEmpresaPropia(ruta.empresaReparto)) {
+          return res.status(403).json({
+            status: "error",
+            message:
+              "Solo se permite finalizar desde administración rutas de empresas externas",
+          });
+        }
+      }
+
+      if (ruta.estado === "cancelada") {
+        return res.status(400).json({
+          status: "error",
+          message: "No se puede finalizar una ruta cancelada",
+        });
+      }
+
+      if (ruta.estado === "finalizada") {
+        return res.json({
+          status: "success",
+          message: "Ruta ya finalizada",
+          data: ruta,
+        });
+      }
+
+      const todosFinalizados = ruta.despachos.every((d) =>
+        isDespachoTerminal(d.estado)
+      );
+
+      if (!todosFinalizados) {
+        return res.status(400).json({
+          status: "error",
+          message:
+            "Aún hay despachos sin finalizar; entrega/no entrega los pendientes o libéralos si es ruta externa",
+        });
+      }
+
+      ruta.estado = "finalizada";
+      ruta.fechaFinalizacion = new Date();
+      await ruta.save();
+
+      res.json({
+        status: "success",
+        message: "Ruta finalizada exitosamente",
+        data: ruta,
+      });
+    } catch (error) {
+      console.error("? Error al finalizar ruta:", error);
+      res.status(500).json({
+        status: "error",
+        message: "Error al finalizar ruta",
+        error: error.message,
+      });
+    }
+  }
+);
+
+// POST /api/rutas/:id/reconciliar-externa - Liberar despachos a pendientes y opcionalmente finalizar
+app.post(
+  "/api/rutas/:id/reconciliar-externa",
+  authMiddleware,
+  requireRoles(["admin", "adminBodega", "subBodega"]),
+  async (req, res) => {
+    try {
+      const liberarDespachos = Array.isArray(req.body?.liberarDespachos)
+        ? req.body.liberarDespachos.map((id) => String(id))
+        : [];
+      const finalizar = Boolean(req.body?.finalizar);
+      const numeroDocumento =
+        typeof req.body?.numeroDocumento === "string"
+          ? req.body.numeroDocumento.trim()
+          : "";
+
+      const ruta = await Ruta.findById(req.params.id)
+        .populate("empresaReparto")
+        .populate("despachos");
+
+      if (!ruta) {
+        return res.status(404).json({
+          status: "error",
+          message: "Ruta no encontrada",
+        });
+      }
+
+      if (ruta.empresaReparto && isEmpresaPropia(ruta.empresaReparto)) {
+        return res.status(403).json({
+          status: "error",
+          message:
+            "Esta acción solo aplica para rutas asignadas a empresas externas",
+        });
+      }
+
+      if (ruta.estado === "cancelada") {
+        return res.status(400).json({
+          status: "error",
+          message: "No se puede reconciliar una ruta cancelada",
+        });
+      }
+
+      const idsEnRuta = new Set(
+        ruta.despachos.map((d) => String(d._id || d))
+      );
+      const idsLiberar = liberarDespachos.filter((id) => idsEnRuta.has(id));
+
+      if (idsLiberar.length !== liberarDespachos.length) {
+        return res.status(400).json({
+          status: "error",
+          message: "Uno o más despachos no pertenecen a esta ruta",
+        });
+      }
+
+      if (idsLiberar.length > 0) {
+        await Despacho.updateMany(
+          { _id: { $in: idsLiberar } },
+          {
+            $set: {
+              estado: "pendiente",
+              rutaAsignada: null,
+              empresaReparto: null,
+            },
+            $unset: { entrega: "", noEntrega: "" },
+          }
+        );
+
+        ruta.despachos = ruta.despachos.filter(
+          (d) => !idsLiberar.includes(String(d._id || d))
+        );
+      }
+
+      if (finalizar) {
+        const ahora = new Date();
+        const idsRuta = ruta.despachos.map((d) => String(d._id || d));
+        const idsAutoEntregar = ruta.despachos
+          .filter((d) => !isDespachoTerminal(d.estado))
+          .map((d) => String(d._id || d));
+
+        if (idsAutoEntregar.length > 0) {
+          const update = {
+            $set: {
+              estado: "entregado",
+              "entrega.fechaEntrega": ahora,
+            },
+            $unset: { noEntrega: "" },
+          };
+
+          if (numeroDocumento) {
+            update.$set["entrega.documentoExterno"] = numeroDocumento;
+          }
+
+          await Despacho.updateMany({ _id: { $in: idsAutoEntregar } }, update);
+        }
+
+        if (numeroDocumento) {
+          await Despacho.updateMany(
+            { _id: { $in: idsRuta }, estado: "entregado" },
+            { $set: { "entrega.documentoExterno": numeroDocumento } }
+          );
+        }
+
+        const restantesFinalizados =
+          (await Despacho.countDocuments({
+            _id: { $in: idsRuta },
+            estado: { $nin: ["entregado", "no_entregado", "cancelado"] },
+          })) === 0;
+
+        if (!restantesFinalizados) {
+          return res.status(400).json({
+            status: "error",
+            message:
+              "Aún hay despachos sin finalizar en la ruta; libera o espera confirmación del chofer",
+          });
+        }
+
+        ruta.estado = "finalizada";
+        ruta.fechaFinalizacion = new Date();
+      }
+
+      await ruta.save();
+
+      const rutaActualizada = await Ruta.findById(ruta._id)
+        .populate("empresaReparto")
+        .populate("despachos");
+
+      res.json({
+        status: "success",
+        message: finalizar
+          ? "Ruta reconciliada y finalizada exitosamente"
+          : "Despachos liberados exitosamente",
+        data: rutaActualizada,
+        liberados: idsLiberar.length,
+      });
+    } catch (error) {
+      console.error("? Error al reconciliar ruta externa:", error);
+      res.status(500).json({
+        status: "error",
+        message: "Error al reconciliar ruta externa",
         error: error.message,
       });
     }

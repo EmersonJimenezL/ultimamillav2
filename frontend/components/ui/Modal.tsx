@@ -1,6 +1,8 @@
 // Componente Modal reutilizable
 import { ReactNode, useEffect } from "react";
-import { Button } from "./Button";
+
+let openModalCount = 0;
+let previousBodyOverflow: string | null = null;
 
 interface ModalProps {
   isOpen: boolean;
@@ -26,11 +28,21 @@ export function Modal({
     };
     if (isOpen) {
       document.addEventListener("keydown", handleEsc);
-      document.body.style.overflow = "hidden";
+      if (openModalCount === 0) {
+        previousBodyOverflow = document.body.style.overflow || "";
+        document.body.style.overflow = "hidden";
+      }
+      openModalCount += 1;
     }
     return () => {
       document.removeEventListener("keydown", handleEsc);
-      document.body.style.overflow = "unset";
+      if (isOpen) {
+        openModalCount = Math.max(0, openModalCount - 1);
+        if (openModalCount === 0) {
+          document.body.style.overflow = previousBodyOverflow ?? "";
+          previousBodyOverflow = null;
+        }
+      }
     };
   }, [isOpen, onClose]);
 

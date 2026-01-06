@@ -127,7 +127,7 @@ export function DespachoCard({
             </p>
             <p className="text-xs md:text-sm text-gray-700">
               <span className="font-medium">RUT:</span>{" "}
-              {formatRut(despacho.entrega.receptorRut)}
+              {formatRut(despacho.entrega.receptorRut ?? "")}
             </p>
             {despacho.entrega.fechaEntrega && (
               <p className="text-xs md:text-sm text-gray-700">

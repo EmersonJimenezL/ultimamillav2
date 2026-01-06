@@ -3,13 +3,14 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { empresaService, type EmpresaReparto } from "@/services/empresaService";
-import { Button } from "@/components/ui";
+import { Button, useDialog } from "@/components/ui";
 import { useRouter } from "next/navigation";
 import { NavBar } from "@/components/layout";
 
 export default function EmpresasPage() {
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
+  const { dialog, showAlert, showConfirm } = useDialog();
   const [empresas, setEmpresas] = useState<EmpresaReparto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -105,10 +106,10 @@ export default function EmpresasPage() {
 
       if (modalMode === "create") {
         await empresaService.create(formData);
-        alert("Empresa creada exitosamente");
+        await showAlert("Empresa creada exitosamente", { variant: "success" });
       } else if (empresaActual) {
         await empresaService.update(empresaActual._id, formData);
-        alert("Empresa actualizada exitosamente");
+        await showAlert("Empresa actualizada exitosamente", { variant: "success" });
       }
 
       await loadEmpresas();
@@ -125,20 +126,24 @@ export default function EmpresasPage() {
   };
 
   const handleDelete = async (id: string, razonSocial: string) => {
-    if (!confirm(`¿Estás seguro de eliminar la empresa "${razonSocial}"?`)) {
-      return;
-    }
+    const ok = await showConfirm(`¿Estás seguro de eliminar la empresa "${razonSocial}"?`, {
+      title: "Eliminar empresa",
+      confirmText: "Eliminar",
+      cancelText: "Cancelar",
+      variant: "danger",
+    });
+    if (!ok) return;
 
     try {
       setDeleting(id);
       setError(null);
       await empresaService.delete(id);
-      alert("Empresa eliminada exitosamente");
+      await showAlert("Empresa eliminada exitosamente", { variant: "success" });
       await loadEmpresas();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       setError(err.message || "Error al eliminar empresa");
-      alert(`Error: ${err.message}`);
+      await showAlert(`Error: ${err.message}`, { title: "Error", variant: "danger" });
     } finally {
       setDeleting(null);
     }
@@ -166,6 +171,7 @@ export default function EmpresasPage() {
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {dialog}
         <div className="mb-6">
           <Button onClick={handleOpenCreate} variant="primary" size="sm">
             ➕ Nueva Empresa
@@ -271,7 +277,7 @@ export default function EmpresasPage() {
                         setFormData({ ...formData, rut: e.target.value })
                       }
                       placeholder="Ej: 12.345.678-9"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-black placeholder-gray-500 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                       required
                     />
                     <p className="text-xs text-gray-500 mt-1">
@@ -293,7 +299,7 @@ export default function EmpresasPage() {
                         })
                       }
                       placeholder="Ej: Chilexpress S.A."
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-black placeholder-gray-500 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                       required
                     />
                   </div>
@@ -309,7 +315,7 @@ export default function EmpresasPage() {
                         setFormData({ ...formData, usuarioCuenta: e.target.value })
                       }
                       placeholder="Ej: pdqq"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-black placeholder-gray-500 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                     />
                     <p className="text-xs text-gray-500 mt-1">
                       Usuario con el que esa empresa inicia sesión para que vea sus rutas.
@@ -327,7 +333,7 @@ export default function EmpresasPage() {
                         setFormData({ ...formData, contacto: e.target.value })
                       }
                       placeholder="Ej: 600 600 6000"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-black placeholder-gray-500 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                       required
                     />
                     <p className="text-xs text-gray-500 mt-1">

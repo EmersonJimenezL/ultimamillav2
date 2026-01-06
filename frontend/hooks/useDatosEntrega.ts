@@ -1,10 +1,11 @@
 import { useState, useRef } from "react";
 import { despachoService, type Despacho } from "@/services/despachoService";
+import type { DespachoConEntrega } from "@/services/rutaService";
 
 export function useDatosEntrega() {
   const [showModal, setShowModal] = useState(false);
   const [despachoSeleccionado, setDespachoSeleccionado] =
-    useState<Despacho | null>(null);
+    useState<Despacho | DespachoConEntrega | null>(null);
   const [receptorRut, setReceptorRut] = useState("");
   const [receptorNombre, setReceptorNombre] = useState("");
   const [receptorApellido, setReceptorApellido] = useState("");
@@ -12,7 +13,7 @@ export function useDatosEntrega() {
   const [actualizando, setActualizando] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const openModal = (despacho: Despacho) => {
+  const openModal = (despacho: Despacho | DespachoConEntrega) => {
     setDespachoSeleccionado(despacho);
     setReceptorRut(despacho.entrega?.receptorRut || "");
     setReceptorNombre(despacho.entrega?.receptorNombre || "");

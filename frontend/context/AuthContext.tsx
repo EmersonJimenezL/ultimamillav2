@@ -28,7 +28,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // Verifica que los valores no sean null ni "undefined" (string)
     if (storedToken && storedUser && storedUser !== "undefined") {
       try {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setToken(storedToken);
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setUser(JSON.parse(storedUser));
       } catch (error) {
         // Si hay error al parsear, limpia el localStorage

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
-import { Button, Card, Modal } from "@/components/ui";
+import { Button, Card, Modal, useDialog } from "@/components/ui";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { RutaEntregasPreview } from "@/components/chofer";
 import { rutaService, type Ruta } from "@/services/rutaService";
@@ -12,6 +12,7 @@ import { getNombreCompleto } from "@/services/userService";
 export default function ChoferPage() {
   const { user, logout, isLoading: authLoading } = useAuth();
   const router = useRouter();
+  const { dialog, showAlert } = useDialog();
   const [rutas, setRutas] = useState<Ruta[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -102,13 +103,13 @@ export default function ChoferPage() {
         rutaSeleccionada.esChoferExterno ? nombreConductor : undefined
       );
 
-      alert("Ruta iniciada exitosamente");
+      await showAlert("Ruta iniciada exitosamente", { variant: "success" });
       handleCloseIniciarModal();
       await loadRutas();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       setError(err.message || "Error al iniciar ruta");
-      alert(`Error: ${err.message}`);
+      await showAlert(`Error: ${err.message}`, { title: "Error", variant: "danger" });
     } finally {
       setIniciando(false);
     }
@@ -179,6 +180,7 @@ export default function ChoferPage() {
 
         {/* Contenido responsive con fondo gris */}
         <main className="min-h-screen bg-gray-50">
+          {dialog}
           <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 md:py-6 lg:py-8 pb-20">
             {/* Error */}
             {error && (

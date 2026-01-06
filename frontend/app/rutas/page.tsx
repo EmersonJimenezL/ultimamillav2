@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { Button } from "@/components/ui";
+import { Button, useDialog } from "@/components/ui";
 import { useRouter } from "next/navigation";
 import {
   FiltroEstado,
@@ -18,6 +18,7 @@ export default function RutasPage() {
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const [rutaExpandida, setRutaExpandida] = useState<string | null>(null);
+  const { dialog, showAlert, showConfirm } = useDialog();
 
   const {
     rutas,
@@ -26,7 +27,10 @@ export default function RutasPage() {
     cancelando,
     loadRutas,
     handleCancelar,
-  } = useRutas();
+  } = useRutas({
+    confirm: (message) => showConfirm(message, { variant: "warning" }),
+    alert: (message, options) => showAlert(message, options),
+  });
 
   const {
     filtroEstado,
@@ -86,12 +90,12 @@ export default function RutasPage() {
   const handleActualizarDatos = async () => {
     try {
       await actualizarDatos();
-      alert("Datos actualizados exitosamente");
+      await showAlert("Datos actualizados exitosamente", { variant: "success" });
       closeModal();
       await loadRutas();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
-      alert(`Error: ${err.message}`);
+      await showAlert(`Error: ${err.message}`, { title: "Error", variant: "danger" });
     }
   };
 
@@ -100,7 +104,7 @@ export default function RutasPage() {
       handleFotoChange(file);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
-      alert(`Error: ${err.message}`);
+      void showAlert(`Error: ${err.message}`, { title: "Error", variant: "danger" });
     }
   };
 
@@ -124,6 +128,7 @@ export default function RutasPage() {
       />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {dialog}
         {error && (
           <div className="mb-4 bg-red-50 border-l-4 border-red-500 text-red-800 px-4 py-3 rounded shadow-sm">
             <div className="flex items-start gap-2">
@@ -185,6 +190,7 @@ export default function RutasPage() {
                 onCancelar={handleCancelar}
                 onAgregarDatos={openModal}
                 cancelando={cancelando === ruta._id}
+                onReload={loadRutas}
               />
             ))}
           </div>

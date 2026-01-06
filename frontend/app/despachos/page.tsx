@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui";
+import { Button, useDialog } from "@/components/ui";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { DespachoCard, ModalCrearRuta } from "@/components/despachos";
 import { useDespachos, useCrearRuta } from "@/hooks";
@@ -10,6 +10,7 @@ import { NavBar } from "@/components/layout";
 
 export default function DespachosPage() {
   const router = useRouter();
+  const { dialog, showAlert } = useDialog();
   const [selectedDespachos, setSelectedDespachos] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(20);
@@ -72,15 +73,15 @@ export default function DespachosPage() {
   const handleCrearRuta = async () => {
     try {
       await crearRuta(selectedDespachos);
-      alert(
-        `Ruta creada exitosamente con ${selectedDespachos.length} despachos`
-      );
+      await showAlert(`Ruta creada exitosamente con ${selectedDespachos.length} despachos`, {
+        variant: "success",
+      });
       closeModal();
       setSelectedDespachos([]);
       await loadDespachos();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
-      alert(`Error: ${err.message}`);
+      await showAlert(`Error: ${err.message}`, { title: "Error", variant: "danger" });
     }
   };
 
@@ -94,6 +95,7 @@ export default function DespachosPage() {
         />
 
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          {dialog}
           {error && (
             <div className="mb-4 bg-red-50 border-l-4 border-red-500 text-red-800 px-4 py-3 rounded shadow-sm">
               <p className="font-medium text-sm">Error</p>

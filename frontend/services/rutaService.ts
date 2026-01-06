@@ -16,6 +16,7 @@ export interface DespachoConEntrega {
     receptorRut?: string;
     fechaEntrega?: string;
     fotoEntrega?: string;
+    documentoExterno?: string;
   };
   noEntrega?: {
     motivo?: string;
@@ -28,7 +29,15 @@ export interface DespachoConEntrega {
 export interface Ruta {
   _id: string;
   numeroRuta?: string; // Generado automáticamente por el backend
-  empresaReparto: string | { _id: string; razonSocial: string; nombre: string };
+  empresaReparto:
+    | string
+    | {
+        _id: string;
+        razonSocial: string;
+        rut?: string;
+        usuarioCuenta?: string;
+        nombre?: string;
+      };
   conductor: string;
   nombreConductor?: string;
   patente?: string; // Opcional: se completa cuando el chofer inicia la ruta
@@ -57,6 +66,13 @@ export interface CancelarRutaResponse {
     ruta: Ruta;
     despachosLiberados: number;
   };
+}
+
+export interface ReconciliarRutaExternaResponse {
+  status: string;
+  message: string;
+  data: Ruta;
+  liberados: number;
 }
 
 class RutaService {
@@ -180,6 +196,27 @@ class RutaService {
 
     const data = await response.json();
     return data.data;
+  }
+
+  // Reconciliar ruta externa: liberar despachos (volver a pendiente) y opcionalmente finalizar
+  async reconciliarExterna(
+    id: string,
+    liberarDespachos: string[],
+    finalizar: boolean,
+    numeroDocumento?: string
+  ): Promise<ReconciliarRutaExternaResponse> {
+    const response = await fetch(`${API_URL}/api/rutas/${id}/reconciliar-externa`, {
+      method: "POST",
+      headers: this.getAuthHeader(),
+      body: JSON.stringify({ liberarDespachos, finalizar, numeroDocumento }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || "Error al reconciliar ruta externa");
+    }
+
+    return (await response.json()) as ReconciliarRutaExternaResponse;
   }
 
   // Cancelar una ruta

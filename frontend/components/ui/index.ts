@@ -6,3 +6,4 @@ export { Input } from "./Input";
 export { Card } from "./Card";
 export { Modal } from "./Modal";
 export { PageNavigation } from "./PageNavigation";
+export { useDialog } from "./useDialog";
