@@ -62,8 +62,12 @@ export default function DespachosPage() {
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
+  const tabEstado = filterEstado === "todos" ? "pendiente" : filterEstado;
+  const pendientesCount = estadoCounts.pendiente;
+  const entregadosCount = estadoCounts.entregado;
 
   const handleSelectAll = () => {
+    if (tabEstado !== "pendiente") return;
     if (selectedDespachos.length === despachosPaginados.length) {
       setSelectedDespachos([]);
     } else {
@@ -136,31 +140,34 @@ export default function DespachosPage() {
               onChange={(e) => setSearchTerm(e.target.value)}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
             />
-            <select
-              value={filterEstado}
-              onChange={(e) => setFilterEstado(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
-            >
-              <option value="todos">
-                Todos (
-                {estadoCounts.pendiente +
-                  estadoCounts.entregado +
-                  estadoCounts.cancelado}
-                )
-              </option>
-              <option value="pendiente">
-                Pendientes ({estadoCounts.pendiente})
-              </option>
-              <option value="entregado">
-                Entregados ({estadoCounts.entregado})
-              </option>
-              <option value="cancelado">
-                Cancelados ({estadoCounts.cancelado})
-              </option>
-            </select>
           </div>
 
-          {despachosPaginados.length > 0 && (
+          <div className="mb-6 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => setFilterEstado("pendiente")}
+              className={`px-4 py-2 rounded-full text-sm font-semibold border transition-colors ${
+                tabEstado === "pendiente"
+                  ? "bg-yellow-100 border-yellow-300 text-yellow-900"
+                  : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50"
+              }`}
+            >
+              Pendientes ({pendientesCount})
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilterEstado("entregado")}
+              className={`px-4 py-2 rounded-full text-sm font-semibold border transition-colors ${
+                tabEstado === "entregado"
+                  ? "bg-green-100 border-green-300 text-green-900"
+                  : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50"
+              }`}
+            >
+              Entregados ({entregadosCount})
+            </button>
+          </div>
+
+          {despachosPaginados.length > 0 && tabEstado === "pendiente" && (
             <div className="mb-4 flex items-center gap-2">
               <input
                 type="checkbox"
@@ -193,8 +200,12 @@ export default function DespachosPage() {
                   <DespachoCard
                     key={despacho._id}
                     despacho={despacho}
-                    isSelected={selectedDespachos.includes(despacho._id)}
+                    isSelected={
+                      tabEstado === "pendiente" &&
+                      selectedDespachos.includes(despacho._id)
+                    }
                     onToggleSelect={handleToggleSelect}
+                    selectable={tabEstado === "pendiente"}
                   />
                 ))}
               </div>

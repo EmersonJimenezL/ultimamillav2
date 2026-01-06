@@ -5,6 +5,7 @@ interface DespachoCardProps {
   despacho: Despacho;
   isSelected: boolean;
   onToggleSelect: (id: string) => void;
+  selectable?: boolean;
 }
 
 function getEstadoBadgeColor(estado: string): string {
@@ -20,25 +21,32 @@ export function DespachoCard({
   despacho,
   isSelected,
   onToggleSelect,
+  selectable = true,
 }: DespachoCardProps) {
   return (
     <Card
-      className={`cursor-pointer transition-all duration-200 ${
+      className={`transition-all duration-200 ${
+        selectable ? "cursor-pointer" : "cursor-default opacity-90"
+      } ${
         isSelected
           ? "border-2 border-blue-500 bg-blue-50"
           : "border border-gray-200 hover:shadow-md hover:border-blue-300"
       }`}
       padding="md"
-      onClick={() => onToggleSelect(despacho._id)}
+      onClick={() => {
+        if (selectable) onToggleSelect(despacho._id);
+      }}
     >
       <div className="flex items-start gap-3">
-        <input
-          type="checkbox"
-          checked={isSelected}
-          onChange={() => onToggleSelect(despacho._id)}
-          className="mt-1 w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
-          onClick={(e) => e.stopPropagation()}
-        />
+        {selectable && (
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={() => onToggleSelect(despacho._id)}
+            className="mt-1 w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+            onClick={(e) => e.stopPropagation()}
+          />
+        )}
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2 mb-2">
             <h3 className="text-lg font-bold text-gray-900 truncate">
