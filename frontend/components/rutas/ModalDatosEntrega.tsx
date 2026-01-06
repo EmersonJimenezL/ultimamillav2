@@ -1,9 +1,10 @@
 import { Modal, Button } from "@/components/ui";
 import { formatRut } from "@/utils";
+import type { DespachoConEntrega } from "@/services/rutaService";
 
 interface ModalDatosEntregaProps {
   isOpen: boolean;
-  despacho: any | null;
+  despacho: DespachoConEntrega | null;
   receptorRut: string;
   receptorNombre: string;
   receptorApellido: string;

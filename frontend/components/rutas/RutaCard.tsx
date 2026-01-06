@@ -8,7 +8,7 @@ interface RutaCardProps {
   isExpanded: boolean;
   onToggleExpand: () => void;
   onCancelar: (rutaId: string, numeroRuta?: string) => void;
-  onAgregarDatos: (despacho: any) => void;
+  onAgregarDatos: (despacho: DespachoConEntrega) => void;
   cancelando: boolean;
 }
 
@@ -130,7 +130,7 @@ export function RutaCard({
                   Despachos ({despachos.length})
                 </h4>
                 <div className="space-y-2 max-h-96 overflow-y-auto">
-                  {despachos.map((despacho: any, index: number) => (
+                  {despachos.map((despacho, index: number) => (
                     <div
                       key={despacho._id}
                       className={`p-3 rounded-lg border ${

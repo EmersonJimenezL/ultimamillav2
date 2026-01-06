@@ -1,9 +1,10 @@
 import { Modal, Button } from "@/components/ui";
 import { useEntregaDespacho } from "@/hooks/useEntregaDespacho";
+import type { DespachoConEntrega } from "@/services/rutaService";
 
 interface ModalEntregarDespachoProps {
   isOpen: boolean;
-  despacho: any | null;
+  despacho: DespachoConEntrega | null;
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -64,6 +65,7 @@ export function ModalEntregarDespacho({
         handleClose();
         onSuccess();
       }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       alert(`Error: ${err.message}`);
     }

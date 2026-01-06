@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { rutaService, type Ruta } from "@/services/rutaService";
+import { getErrorMessage } from "@/utils/errorUtils";
 
 export function useRutas() {
   const [rutas, setRutas] = useState<Ruta[]>([]);
@@ -13,8 +14,8 @@ export function useRutas() {
       setError(null);
       const data = await rutaService.getAll();
       setRutas(data);
-    } catch (err: any) {
-      setError(err.message || "Error al cargar rutas");
+    } catch (err) {
+      setError(getErrorMessage(err, "Error al cargar rutas"));
     } finally {
       setLoading(false);
     }
@@ -39,9 +40,10 @@ export function useRutas() {
         `Ruta cancelada exitosamente.\n${result.data.despachosLiberados} despachos liberados.`
       );
       await loadRutas();
-    } catch (err: any) {
-      setError(err.message || "Error al cancelar ruta");
-      alert(`Error: ${err.message}`);
+    } catch (err) {
+      const message = getErrorMessage(err, "Error al cancelar ruta");
+      setError(message);
+      alert(`Error: ${message}`);
     } finally {
       setCancelando(null);
     }
@@ -56,4 +58,3 @@ export function useRutas() {
     handleCancelar,
   };
 }
-

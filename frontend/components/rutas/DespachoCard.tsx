@@ -1,10 +1,11 @@
 import { Button, Card } from "@/components/ui";
+import type { DespachoConEntrega } from "@/services/rutaService";
 
 interface DespachoCardProps {
-  despacho: any;
+  despacho: DespachoConEntrega;
   index: number;
   estadoRuta: string;
-  onEntregar: (despacho: any) => void;
+  onEntregar: (despacho: DespachoConEntrega) => void;
   onAbrirMapa: (direccion: string) => void;
   getEstadoBadgeColor: (estado: string) => string;
   formatRut: (rut: string) => string;

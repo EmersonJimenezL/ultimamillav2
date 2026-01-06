@@ -5,6 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { Button, Card } from "@/components/ui";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import type { Despacho } from "@/services/despachoService";
 
 interface DespachoMetrics {
   total: number;
@@ -47,20 +48,20 @@ export default function DashboardPage() {
 
         if (response.ok) {
           const result = await response.json();
-          const despachos = result.data;
+          const despachos: Despacho[] = result.data;
 
           // Calcular métricas
           const metrics = {
             total: despachos.length,
-            disponibles: despachos.filter((d: any) => d.estado === "disponible")
-              .length,
-            enRuta: despachos.filter(
-              (d: any) => d.estado === "en ruta" || d.rutaAsignada
+            disponibles: despachos.filter(
+              (d) => d.estado === "pendiente" && !d.rutaAsignada
             ).length,
-            entregados: despachos.filter((d: any) => d.entrega?.fechaEntrega)
+            enRuta: despachos.filter((d) => d.estado === "asignado" || !!d.rutaAsignada)
               .length,
-            cancelados: despachos.filter((d: any) => d.estado === "cancelado")
-              .length,
+            entregados: despachos.filter(
+              (d) => d.estado === "entregado" || !!d.entrega?.fechaEntrega
+            ).length,
+            cancelados: despachos.filter((d) => d.estado === "cancelado").length,
           };
 
           setMetrics(metrics);

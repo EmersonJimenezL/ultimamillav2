@@ -26,6 +26,7 @@ export default function Home() {
       } else {
         window.location.href = "/dashboard";
       }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       setError(err?.message || "Usuario o contraseña incorrectos");
       setIsLoading(false);

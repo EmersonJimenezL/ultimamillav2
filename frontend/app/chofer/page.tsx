@@ -55,6 +55,7 @@ export default function ChoferPage() {
       });
 
       setRutas(rutasOrdenadas);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       setError(err.message || "Error al cargar rutas");
     } finally {
@@ -104,6 +105,7 @@ export default function ChoferPage() {
       alert("Ruta iniciada exitosamente");
       handleCloseIniciarModal();
       await loadRutas();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       setError(err.message || "Error al iniciar ruta");
       alert(`Error: ${err.message}`);

@@ -1,10 +1,11 @@
 import { Card } from "@/components/ui";
 import { DespachoCard } from "./DespachoCard";
+import type { DespachoConEntrega } from "@/services/rutaService";
 
 interface DespachosListaProps {
-  despachos: any[];
+  despachos: DespachoConEntrega[];
   rutaEstado: string;
-  onEntregarDespacho: (despacho: any) => void;
+  onEntregarDespacho: (despacho: DespachoConEntrega) => void;
 }
 
 export function DespachosLista({
@@ -25,7 +26,7 @@ export function DespachosLista({
 
   return (
     <div className="space-y-3 md:space-y-4 lg:grid lg:grid-cols-2 xl:grid-cols-3 lg:gap-4 xl:gap-5 lg:space-y-0">
-      {despachos.map((despacho: any, index: number) => (
+      {despachos.map((despacho, index: number) => (
         <DespachoCard
           key={despacho._id}
           despacho={despacho}

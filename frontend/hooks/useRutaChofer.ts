@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { rutaService, type Ruta } from "@/services/rutaService";
+import { getErrorMessage } from "@/utils/errorUtils";
 
 export function useRutaChofer(rutaId: string | null) {
   const [ruta, setRuta] = useState<Ruta | null>(null);
@@ -7,12 +8,7 @@ export function useRutaChofer(rutaId: string | null) {
   const [error, setError] = useState<string | null>(null);
   const [finalizando, setFinalizando] = useState(false);
 
-  useEffect(() => {
-    if (!rutaId) return;
-    loadRuta();
-  }, [rutaId]);
-
-  const loadRuta = async () => {
+  const loadRuta = useCallback(async () => {
     if (!rutaId) return;
 
     try {
@@ -20,12 +16,17 @@ export function useRutaChofer(rutaId: string | null) {
       setError(null);
       const data = await rutaService.getById(rutaId);
       setRuta(data);
-    } catch (err: any) {
-      setError(err.message || "Error al cargar ruta");
+    } catch (err) {
+      setError(getErrorMessage(err, "Error al cargar ruta"));
     } finally {
       setLoading(false);
     }
-  };
+  }, [rutaId]);
+
+  useEffect(() => {
+    if (!rutaId) return;
+    loadRuta();
+  }, [rutaId, loadRuta]);
 
   const finalizarRuta = async () => {
     if (!rutaId || !ruta) return;
@@ -35,8 +36,8 @@ export function useRutaChofer(rutaId: string | null) {
       setError(null);
       await rutaService.finalizar(rutaId);
       await loadRuta();
-    } catch (err: any) {
-      setError(err.message || "Error al finalizar ruta");
+    } catch (err) {
+      setError(getErrorMessage(err, "Error al finalizar ruta"));
       throw err;
     } finally {
       setFinalizando(false);

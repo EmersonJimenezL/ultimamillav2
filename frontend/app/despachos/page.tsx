@@ -78,6 +78,7 @@ export default function DespachosPage() {
       closeModal();
       setSelectedDespachos([]);
       await loadDespachos();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       alert(`Error: ${err.message}`);
     }

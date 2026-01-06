@@ -283,7 +283,7 @@ const rutaSchema = new mongoose.Schema(
 rutaSchema.pre("save", async function (next) {
   // Generar número de ruta único si no existe
   if (!this.numeroRuta) {
-    const count = await mongoose.model("Ruta").countDocuments();
+    const count = await this.constructor.countDocuments();
     const fecha = new Date();
     const year = fecha.getFullYear().toString().slice(-2);
     const month = String(fecha.getMonth() + 1).padStart(2, "0");

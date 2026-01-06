@@ -12,6 +12,13 @@ export interface Despacho {
   ShipToCode: string;
   Address2: string;
   estado: "pendiente" | "asignado" | "entregado" | "no_entregado" | "cancelado";
+  entrega?: {
+    receptorRut?: string;
+    receptorNombre?: string;
+    receptorApellido?: string;
+    fotoEntrega?: string;
+    fechaEntrega?: string;
+  };
   noEntrega?: {
     motivo?: string;
     observacion?: string;

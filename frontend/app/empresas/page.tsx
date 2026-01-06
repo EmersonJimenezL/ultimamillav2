@@ -57,6 +57,7 @@ export default function EmpresasPage() {
       setError(null);
       const data = await empresaService.getAll();
       setEmpresas(data);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       setError(err.message || "Error al cargar empresas");
     } finally {
@@ -112,6 +113,7 @@ export default function EmpresasPage() {
 
       await loadEmpresas();
       handleCloseModal();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       setError(
         err.message ||
@@ -133,6 +135,7 @@ export default function EmpresasPage() {
       await empresaService.delete(id);
       alert("Empresa eliminada exitosamente");
       await loadEmpresas();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       setError(err.message || "Error al eliminar empresa");
       alert(`Error: ${err.message}`);

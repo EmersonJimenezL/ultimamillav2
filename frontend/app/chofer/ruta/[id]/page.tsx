@@ -16,6 +16,7 @@ import {
   abrirRutaCompleta,
   extraerDireccionesValidas,
 } from "@/utils/mapsUtils";
+import type { DespachoConEntrega } from "@/services/rutaService";
 
 export default function RutaDetallePage() {
   const { user, isLoading: authLoading } = useAuth();
@@ -28,7 +29,8 @@ export default function RutaDetallePage() {
 
   const [showEntregarModal, setShowEntregarModal] = useState(false);
   const [showFinalizarModal, setShowFinalizarModal] = useState(false);
-  const [despachoSeleccionado, setDespachoSeleccionado] = useState<any>(null);
+  const [despachoSeleccionado, setDespachoSeleccionado] =
+    useState<DespachoConEntrega | null>(null);
 
   // Redirigir si no hay autenticación
   useEffect(() => {
@@ -46,15 +48,15 @@ export default function RutaDetallePage() {
     totalDespachos,
     todosDespachosFinalizados,
   } = useMemo(() => {
-    const despachos = Array.isArray(ruta?.despachos) ? ruta.despachos : [];
-    const despachosEntregados = despachos.filter(
-      (d: any) => d.estado === "entregado"
-    ).length;
-    const despachosNoEntregados = despachos.filter(
-      (d: any) => d.estado === "no_entregado"
-    ).length;
+    const despachos = Array.isArray(ruta?.despachos)
+      ? ruta.despachos.filter(
+          (d): d is DespachoConEntrega => typeof d === "object" && d !== null
+        )
+      : [];
+    const despachosEntregados = despachos.filter((d) => d.estado === "entregado").length;
+    const despachosNoEntregados = despachos.filter((d) => d.estado === "no_entregado").length;
     const totalDespachos = despachos.length;
-    const despachosFinalizados = despachos.filter((d: any) =>
+    const despachosFinalizados = despachos.filter((d) =>
       ["entregado", "no_entregado", "cancelado"].includes(d.estado)
     ).length;
     const todosDespachosFinalizados =
@@ -69,7 +71,7 @@ export default function RutaDetallePage() {
     };
   }, [ruta]);
 
-  const handleOpenEntregarModal = (despacho: any) => {
+  const handleOpenEntregarModal = (despacho: DespachoConEntrega) => {
     setDespachoSeleccionado(despacho);
     setShowEntregarModal(true);
   };
@@ -225,7 +227,7 @@ export default function RutaDetallePage() {
               asignadoEl={ruta.asignadoEl}
               fechaInicio={ruta.fechaInicio}
               fechaFinalizacion={ruta.fechaFinalizacion}
-              despachos={despachos as any[]}
+              despachos={despachos}
             />
 
             {/* Botón de finalizar ruta */}

@@ -2,6 +2,8 @@ import * as XLSX from "xlsx";
 import type { Ruta, DespachoConEntrega } from "@/services/rutaService";
 
 export function exportRutasToExcel(rutas: Ruta[]) {
+  type ExcelRow = Record<string, string | number>;
+
   // Crear un array para los datos principales de las rutas
   const rutasData = rutas.map((ruta) => {
     // Filtrar solo despachos que sean objetos (no strings)
@@ -70,7 +72,7 @@ export function exportRutasToExcel(rutas: Ruta[]) {
   });
 
   // Crear un array para los despachos detallados
-  const despachosData: any[] = [];
+  const despachosData: ExcelRow[] = [];
   rutas.forEach((ruta) => {
     if (Array.isArray(ruta.despachos)) {
       ruta.despachos.forEach((despacho) => {

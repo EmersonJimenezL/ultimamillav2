@@ -5,6 +5,11 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
+const dotenv = require("dotenv");
+const path = require("path");
+
+// Cargar variables de entorno sin depender del working directory.
+dotenv.config({ path: path.join(__dirname, ".env") });
 
 // Importar modelos desde backend.js
 const { EmpresaReparto, Despacho, Ruta } = require("./backend");
@@ -20,7 +25,9 @@ const PORT = process.env.PORT || 4000; // Puerto 4000 para no interferir con fro
 // Desarrollo: mongodb://localhost:27017/ultimamillav2
 // Producción: mongodb://192.168.200.80:27017/ultimamillav2
 const MONGO_URI =
-  process.env.MONGO_URI || "mongodb://localhost:27017/ultimamillav2";
+  process.env.MONGODB_URI ||
+  process.env.MONGO_URI ||
+  "mongodb://localhost:27017/ultimamillav2";
 
 // ===== MIDDLEWARES GLOBALES =====
 app.use(cors()); // Permite peticiones desde el frontend
@@ -33,7 +40,7 @@ const authMiddleware = (req, res, next) => {
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      console.log("❌ Token no proporcionado o formato incorrecto");
+      console.log("Token no proporcionado o formato incorrecto");
       return res.status(401).json({
         status: "error",
         message: "Token no proporcionado",
@@ -46,9 +53,9 @@ const authMiddleware = (req, res, next) => {
     // Decodificar sin verificar ya que el servidor remoto ya verificó el token
     const decoded = jwt.decode(token, { complete: false });
 
-    console.log("✅ Token decodificado:", decoded ? "Éxito" : "Falló");
+    console.log("Token decodificado:", decoded ? "Éxito" : "Falló");
     if (decoded) {
-      console.log("👤 Usuario:", decoded.usuario, "Rol:", decoded.rol);
+      console.log("Usuario:", decoded.usuario, "Rol:", decoded.rol);
     }
 
     if (!decoded) {
@@ -61,7 +68,7 @@ const authMiddleware = (req, res, next) => {
     req.user = decoded;
     next();
   } catch (error) {
-    console.error("❌ Error al procesar token:", error);
+    console.error("Error al procesar token:", error);
     return res.status(500).json({
       status: "error",
       message: "Error al procesar token",
@@ -104,7 +111,11 @@ const EXTERNAL_API_URL = "http://192.168.200.80:3000/data/FactDespacho";
 const SYNC_INTERVAL = 5 * 60 * 1000; // 5 minutos en milisegundos
 
 function isDespachoTerminal(estado) {
-  return estado === "entregado" || estado === "no_entregado" || estado === "cancelado";
+  return (
+    estado === "entregado" ||
+    estado === "no_entregado" ||
+    estado === "cancelado"
+  );
 }
 
 function userHasRole(user, role) {
@@ -114,7 +125,9 @@ function userHasRole(user, role) {
 }
 
 function normalizeRut(rut) {
-  return String(rut).replace(/[.\-\s]/g, "").toUpperCase();
+  return String(rut)
+    .replace(/[.\-\s]/g, "")
+    .toUpperCase();
 }
 
 function isEmpresaPropia(empresa) {
@@ -135,7 +148,9 @@ function isEmpresaPropia(empresa) {
     return true;
   }
 
-  return String(empresa.razonSocial || "").toLowerCase().includes("vivipra");
+  return String(empresa.razonSocial || "")
+    .toLowerCase()
+    .includes("vivipra");
 }
 
 function getUserKey(req) {
@@ -149,7 +164,11 @@ async function sincronizarDespachos() {
   try {
     console.log("🔄 Sincronizando despachos desde API externa...");
 
-    const response = await fetch(EXTERNAL_API_URL);
+    const response = await fetch(EXTERNAL_API_URL).catch((err) => {
+      throw new Error(
+        "No se pudo conectar a la API externa de despachos: " + err.message
+      );
+    });
     if (!response.ok) {
       throw new Error(`Error HTTP: ${response.status}`);
     }
@@ -161,7 +180,9 @@ async function sincronizarDespachos() {
     for (const despachoDatos of despachos) {
       try {
         // Buscar si ya existe por FolioNum
-        const existente = await Despacho.findOne({ FolioNum: despachoDatos.FolioNum });
+        const existente = await Despacho.findOne({
+          FolioNum: despachoDatos.FolioNum,
+        });
 
         if (existente) {
           // Actualizar solo si hay cambios
@@ -177,11 +198,16 @@ async function sincronizarDespachos() {
           nuevos++;
         }
       } catch (error) {
-        console.error(`Error al procesar despacho ${despachoDatos.FolioNum}:`, error.message);
+        console.error(
+          `Error al procesar despacho ${despachoDatos.FolioNum}:`,
+          error.message
+        );
       }
     }
 
-    console.log(`✅ Sincronización completada: ${nuevos} nuevos, ${actualizados} actualizados`);
+    console.log(
+      `✅ Sincronización completada: ${nuevos} nuevos, ${actualizados} actualizados`
+    );
   } catch (error) {
     console.error("❌ Error al sincronizar despachos:", error.message);
   }
@@ -198,11 +224,15 @@ mongoose
 
     // Sincronizar cada 5 minutos
     setInterval(sincronizarDespachos, SYNC_INTERVAL);
-    console.log(`🔁 Sincronización automática activada (cada ${SYNC_INTERVAL / 1000 / 60} minutos)`);
+    console.log(
+      `🔁 Sincronización automática activada (cada ${
+        SYNC_INTERVAL / 1000 / 60
+      } minutos)`
+    );
   })
   .catch((error) => {
     console.error("❌ Error al conectar a MongoDB:", error);
-    process.exit(1);
+    // Mantener el servidor vivo; las rutas bajo /api responderán 503 hasta reconectar.
   });
 
 // ===== RUTA DE PRUEBA =====
@@ -213,6 +243,17 @@ app.get("/", (req, res) => {
     version: "1.0.0",
   });
 });
+
+function requireDb(req, res, next) {
+  if (mongoose.connection.readyState === 1) return next();
+
+  return res.status(503).json({
+    status: "error",
+    message: "Base de datos no disponible",
+  });
+}
+
+app.use("/api", requireDb);
 
 // ================================================================
 // ===== ENDPOINTS: EMPRESAS DE REPARTO =====
@@ -542,7 +583,10 @@ app.post(
       }
 
       // Evitar re-marcar si ya está finalizado
-      if (despacho.estado === "entregado" || despacho.estado === "no_entregado") {
+      if (
+        despacho.estado === "entregado" ||
+        despacho.estado === "no_entregado"
+      ) {
         return res.status(400).json({
           status: "error",
           message: "El despacho ya fue marcado como entregado/no entregado",
@@ -555,25 +599,31 @@ app.post(
 
       // Verificar si este despacho pertenece a una ruta
       if (despacho.rutaAsignada) {
-        const ruta = await Ruta.findById(despacho.rutaAsignada).populate("despachos");
+        const ruta = await Ruta.findById(despacho.rutaAsignada).populate(
+          "despachos"
+        );
 
         if (ruta) {
           // Obtener todos los IDs de despachos de la ruta
-          const despachosIds = ruta.despachos.map(d => d._id || d);
+          const despachosIds = ruta.despachos.map((d) => d._id || d);
 
           // Verificar si todos los despachos están entregados
           const todosEntregados = await Despacho.find({
-            _id: { $in: despachosIds }
+            _id: { $in: despachosIds },
           });
 
-          const todosEstanEntregados = todosEntregados.every(d => isDespachoTerminal(d.estado));
+          const todosEstanEntregados = todosEntregados.every((d) =>
+            isDespachoTerminal(d.estado)
+          );
 
           // Si todos están entregados, marcar la ruta como finalizada
           if (todosEstanEntregados) {
             ruta.estado = "finalizada";
             ruta.fechaFinalizacion = new Date();
             await ruta.save();
-            console.log(`✅ Ruta ${ruta.numeroRuta} marcada como finalizada - Todos los despachos entregados`);
+            console.log(
+              `✅ Ruta ${ruta.numeroRuta} marcada como finalizada - Todos los despachos entregados`
+            );
           }
         }
       }
@@ -732,7 +782,10 @@ app.get(
       }
 
       // Restringir acceso a choferes: solo su propia ruta o rutas de su empresa externa
-      const isPrivileged = userHasRole(req.user, "admin") || userHasRole(req.user, "adminBodega") || userHasRole(req.user, "subBodega");
+      const isPrivileged =
+        userHasRole(req.user, "admin") ||
+        userHasRole(req.user, "adminBodega") ||
+        userHasRole(req.user, "subBodega");
       if (!isPrivileged && userHasRole(req.user, "chofer")) {
         const userKey = getUserKey(req);
         if (!userKey) {
@@ -743,7 +796,11 @@ app.get(
         }
 
         let allowed = String(ruta.conductor || "").toLowerCase() === userKey;
-        if (!allowed && ruta.empresaReparto && ruta.empresaReparto.usuarioCuenta) {
+        if (
+          !allowed &&
+          ruta.empresaReparto &&
+          ruta.empresaReparto.usuarioCuenta
+        ) {
           allowed =
             String(ruta.empresaReparto.usuarioCuenta).toLowerCase() === userKey;
         }
@@ -777,7 +834,10 @@ app.post(
   requireRoles(["admin", "chofer", "subBodega", "adminBodega"]),
   async (req, res) => {
     try {
-      console.log("📝 Datos recibidos para crear ruta:", JSON.stringify(req.body, null, 2));
+      console.log(
+        "📝 Datos recibidos para crear ruta:",
+        JSON.stringify(req.body, null, 2)
+      );
 
       const asignadoPor =
         req.user && (req.user.usuario || req.user.id || req.user._id)
@@ -819,7 +879,9 @@ app.post(
         ...req.body,
         asignadoPor,
         conductor,
-        esChoferExterno: empresaEsPropia ? Boolean(req.body.esChoferExterno) : true,
+        esChoferExterno: empresaEsPropia
+          ? Boolean(req.body.esChoferExterno)
+          : true,
       });
       await ruta.save();
 
@@ -833,11 +895,13 @@ app.post(
             $set: {
               estado: "asignado",
               rutaAsignada: ruta._id,
-              empresaReparto: ruta.empresaReparto
-            }
+              empresaReparto: ruta.empresaReparto,
+            },
           }
         );
-        console.log(`✅ ${ruta.despachos.length} despachos actualizados a estado 'asignado'`);
+        console.log(
+          `✅ ${ruta.despachos.length} despachos actualizados a estado 'asignado'`
+        );
       }
 
       res.status(201).json({
@@ -860,10 +924,12 @@ app.post(
         status: "error",
         message: "Error al crear ruta",
         error: error.message,
-        details: error.errors ? Object.keys(error.errors).map(key => ({
-          field: key,
-          message: error.errors[key].message
-        })) : []
+        details: error.errors
+          ? Object.keys(error.errors).map((key) => ({
+              field: key,
+              message: error.errors[key].message,
+            }))
+          : [],
       });
     }
   }
@@ -905,7 +971,6 @@ app.put(
   }
 );
 
-
 // POST /api/rutas/:id/iniciar - Iniciar ruta (chofer ingresa patente y datos si es externo)
 app.post(
   "/api/rutas/:id/iniciar",
@@ -944,7 +1009,8 @@ app.post(
         if (!nombreConductor) {
           return res.status(400).json({
             status: "error",
-            message: "El nombre del conductor es obligatorio para chofer externo",
+            message:
+              "El nombre del conductor es obligatorio para chofer externo",
           });
         }
 
@@ -970,7 +1036,9 @@ app.post(
       ruta.estado = "iniciada";
       await ruta.save();
 
-      console.log(`🚚 Ruta ${ruta.numeroRuta} iniciada por ${ruta.conductor} con patente ${ruta.patente}`);
+      console.log(
+        `🚚 Ruta ${ruta.numeroRuta} iniciada por ${ruta.conductor} con patente ${ruta.patente}`
+      );
 
       res.json({
         status: "success",
@@ -995,13 +1063,20 @@ app.post(
   requireRoles(["chofer"]),
   async (req, res) => {
     try {
-      const { receptorRut, receptorNombre, receptorApellido, fotoEntrega } = req.body;
+      const { receptorRut, receptorNombre, receptorApellido, fotoEntrega } =
+        req.body;
 
       // Validaciones
-      if (!receptorRut || !receptorNombre || !receptorApellido || !fotoEntrega) {
+      if (
+        !receptorRut ||
+        !receptorNombre ||
+        !receptorApellido ||
+        !fotoEntrega
+      ) {
         return res.status(400).json({
           status: "error",
-          message: "Todos los campos son obligatorios: RUT, nombre, apellido y foto",
+          message:
+            "Todos los campos son obligatorios: RUT, nombre, apellido y foto",
         });
       }
 
@@ -1023,7 +1098,10 @@ app.post(
       }
 
       // Verificar que el despacho no esté ya entregado
-      if (despacho.estado === "entregado" || despacho.estado === "no_entregado") {
+      if (
+        despacho.estado === "entregado" ||
+        despacho.estado === "no_entregado"
+      ) {
         return res.status(400).json({
           status: "error",
           message: "El despacho ya fue marcado como entregado/no entregado",
@@ -1042,10 +1120,14 @@ app.post(
 
       await despacho.save();
 
-      console.log(`📦 Despacho ${despacho.FolioNum} entregado a ${receptorNombre} ${receptorApellido}`);
+      console.log(
+        `📦 Despacho ${despacho.FolioNum} entregado a ${receptorNombre} ${receptorApellido}`
+      );
 
       // Verificar si todos los despachos de la ruta están entregados
-      const ruta = await Ruta.findById(despacho.rutaAsignada).populate("despachos");
+      const ruta = await Ruta.findById(despacho.rutaAsignada).populate(
+        "despachos"
+      );
 
       if (ruta) {
         const todosFinalizados = ruta.despachos.every((d) => {
@@ -1109,7 +1191,10 @@ app.post(
         });
       }
 
-      if (despacho.estado === "entregado" || despacho.estado === "no_entregado") {
+      if (
+        despacho.estado === "entregado" ||
+        despacho.estado === "no_entregado"
+      ) {
         return res.status(400).json({
           status: "error",
           message: "El despacho ya fue marcado como entregado/no entregado",
@@ -1130,10 +1215,14 @@ app.post(
         `⚠️ Despacho ${despacho.FolioNum} marcado como no entregado. Motivo: ${motivo}`
       );
 
-      const ruta = await Ruta.findById(despacho.rutaAsignada).populate("despachos");
+      const ruta = await Ruta.findById(despacho.rutaAsignada).populate(
+        "despachos"
+      );
 
       if (ruta) {
-        const todosFinalizados = ruta.despachos.every((d) => isDespachoTerminal(d.estado));
+        const todosFinalizados = ruta.despachos.every((d) =>
+          isDespachoTerminal(d.estado)
+        );
 
         if (todosFinalizados && ruta.estado !== "finalizada") {
           ruta.estado = "finalizada";
@@ -1166,7 +1255,8 @@ app.put(
   requireRoles(["admin", "adminBodega", "subBodega"]),
   async (req, res) => {
     try {
-      const { receptorRut, receptorNombre, receptorApellido, fotoEntrega } = req.body;
+      const { receptorRut, receptorNombre, receptorApellido, fotoEntrega } =
+        req.body;
 
       const despacho = await Despacho.findById(req.params.id);
 
@@ -1191,14 +1281,19 @@ app.put(
       }
 
       if (receptorRut) despacho.entrega.receptorRut = receptorRut.trim();
-      if (receptorNombre) despacho.entrega.receptorNombre = receptorNombre.trim();
-      if (receptorApellido) despacho.entrega.receptorApellido = receptorApellido.trim();
+      if (receptorNombre)
+        despacho.entrega.receptorNombre = receptorNombre.trim();
+      if (receptorApellido)
+        despacho.entrega.receptorApellido = receptorApellido.trim();
       if (fotoEntrega) despacho.entrega.fotoEntrega = fotoEntrega;
-      if (!despacho.entrega.fechaEntrega) despacho.entrega.fechaEntrega = new Date();
+      if (!despacho.entrega.fechaEntrega)
+        despacho.entrega.fechaEntrega = new Date();
 
       await despacho.save();
 
-      console.log(`📝 Datos de entrega actualizados para despacho ${despacho.FolioNum}`);
+      console.log(
+        `📝 Datos de entrega actualizados para despacho ${despacho.FolioNum}`
+      );
 
       res.json({
         status: "success",
@@ -1233,31 +1328,33 @@ app.post(
       }
 
       // Obtener IDs de despachos de la ruta
-      const despachosIds = ruta.despachos.map(d => d._id || d);
+      const despachosIds = ruta.despachos.map((d) => d._id || d);
 
       // Obtener despachos que no están entregados
       const despachosNoEntregados = await Despacho.find({
         _id: { $in: despachosIds },
-        estado: { $ne: "entregado" }
+        estado: { $ne: "entregado" },
       });
 
-      console.log(`📦 Liberando ${despachosNoEntregados.length} despachos no entregados de la ruta ${ruta.numeroRuta}`);
+      console.log(
+        `📦 Liberando ${despachosNoEntregados.length} despachos no entregados de la ruta ${ruta.numeroRuta}`
+      );
 
       // Liberar despachos no entregados (volver a estado pendiente)
       if (despachosNoEntregados.length > 0) {
         await Despacho.updateMany(
           {
-            _id: { $in: despachosNoEntregados.map(d => d._id) }
+            _id: { $in: despachosNoEntregados.map((d) => d._id) },
           },
           {
             $set: {
               estado: "pendiente",
               rutaAsignada: null,
-              empresaReparto: null
+              empresaReparto: null,
             },
             $unset: {
               entrega: "",
-              noEntrega: ""
+              noEntrega: "",
             },
           }
         );
@@ -1272,8 +1369,8 @@ app.post(
         message: "Ruta cancelada exitosamente",
         data: {
           ruta,
-          despachosLiberados: despachosNoEntregados.length
-        }
+          despachosLiberados: despachosNoEntregados.length,
+        },
       });
     } catch (error) {
       console.error("❌ Error al cancelar ruta:", error);
@@ -1372,4 +1469,12 @@ app.listen(PORT, () => {
   console.log("  POST   /api/rutas");
   console.log("  PUT    /api/rutas/:id");
   console.log("  DELETE /api/rutas/:id");
+});
+
+process.on("unhandledRejection", (reason) => {
+  console.error("⚠️ Error asíncrono no capturado:", reason);
+});
+
+process.on("uncaughtException", (err) => {
+  console.error("❌ Error fatal del sistema:", err);
 });

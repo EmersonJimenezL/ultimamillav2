@@ -1,12 +1,13 @@
 import { Card, Button } from "@/components/ui";
 import { abrirEnMapa } from "@/utils/mapsUtils";
 import { formatRut } from "@/utils/rutaUtils";
+import type { DespachoConEntrega } from "@/services/rutaService";
 
 interface DespachoCardProps {
-  despacho: any;
+  despacho: DespachoConEntrega;
   index: number;
   rutaEstado: string;
-  onEntregar: (despacho: any) => void;
+  onEntregar: (despacho: DespachoConEntrega) => void;
 }
 
 function getEstadoBadgeColor(estado: string): string {
@@ -26,9 +27,6 @@ export function DespachoCard({
   rutaEstado,
   onEntregar,
 }: DespachoCardProps) {
-  const isDespachoObject = typeof despacho === "object" && despacho !== null;
-  if (!isDespachoObject) return null;
-
   return (
     <Card
       className={`border-2 transition-all duration-300 bg-white ${

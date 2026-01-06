@@ -89,6 +89,7 @@ export default function RutasPage() {
       alert("Datos actualizados exitosamente");
       closeModal();
       await loadRutas();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       alert(`Error: ${err.message}`);
     }
@@ -97,6 +98,7 @@ export default function RutasPage() {
   const handleFotoChangeWrapper = (file: File | null) => {
     try {
       handleFotoChange(file);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       alert(`Error: ${err.message}`);
     }

@@ -1,6 +1,6 @@
 // Servicio para gestionar rutas
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
 export interface DespachoConEntrega {
   _id: string;
@@ -48,6 +48,15 @@ export interface RutaResponse {
   status: string;
   data: Ruta | Ruta[];
   count?: number;
+}
+
+export interface CancelarRutaResponse {
+  status: string;
+  message: string;
+  data: {
+    ruta: Ruta;
+    despachosLiberados: number;
+  };
 }
 
 class RutaService {
@@ -174,7 +183,7 @@ class RutaService {
   }
 
   // Cancelar una ruta
-  async cancelar(id: string): Promise<any> {
+  async cancelar(id: string): Promise<CancelarRutaResponse> {
     const response = await fetch(`${API_URL}/api/rutas/${id}/cancelar`, {
       method: "POST",
       headers: this.getAuthHeader(),
@@ -185,7 +194,7 @@ class RutaService {
       throw new Error(errorData.message || "Error al cancelar ruta");
     }
 
-    return await response.json();
+    return (await response.json()) as CancelarRutaResponse;
   }
 
   // Eliminar una ruta
