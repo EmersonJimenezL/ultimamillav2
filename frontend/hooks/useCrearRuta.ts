@@ -31,7 +31,7 @@ export function useCrearRuta() {
 
   const openModal = async () => {
     setShowModal(true);
-    await loadModalData();
+    await loadData();
   };
 
   const closeModal = () => {
@@ -41,7 +41,7 @@ export function useCrearRuta() {
     setEsChoferExterno(false);
   };
 
-  const loadModalData = async () => {
+  const loadData = async () => {
     try {
       setLoadingModal(true);
       const [empresasData, choferesData] = await Promise.all([
@@ -57,7 +57,14 @@ export function useCrearRuta() {
     }
   };
 
-  const crearRuta = async (despachoIds: string[]) => {
+  const crearRuta = async (
+    despachoIds: string[],
+    override?: {
+      empresaId?: string;
+      choferId?: string;
+      esChoferExterno?: boolean;
+    }
+  ) => {
     if (creatingRef.current) {
       return false;
     }
@@ -66,11 +73,18 @@ export function useCrearRuta() {
       throw new Error("Debes seleccionar al menos un despacho");
     }
 
-    if (!selectedEmpresa) {
+    const empresaId = override?.empresaId ?? selectedEmpresa;
+    const choferId = override?.choferId ?? selectedChofer;
+    const empresaOverride = empresas.find((e) => e._id === empresaId);
+    const empresaEsPropiaOverride = isEmpresaPropia(empresaOverride);
+    const esChoferExternoFinal =
+      override?.esChoferExterno ?? (empresaEsPropiaOverride ? esChoferExterno : true);
+
+    if (!empresaId) {
       throw new Error("Debes seleccionar una empresa de reparto");
     }
 
-    if (empresaEsPropia && !selectedChofer) {
+    if (empresaEsPropiaOverride && !choferId) {
       throw new Error("Debes seleccionar un conductor (empresa propia)");
     }
 
@@ -79,11 +93,11 @@ export function useCrearRuta() {
       setCreatingRuta(true);
 
       await rutaService.create({
-        empresaReparto: selectedEmpresa,
-        ...(empresaEsPropia ? { conductor: selectedChofer } : {}),
+        empresaReparto: empresaId,
+        ...(empresaEsPropiaOverride ? { conductor: choferId } : {}),
         despachos: despachoIds,
         estado: "pendiente",
-        esChoferExterno: empresaEsPropia ? esChoferExterno : true,
+        esChoferExterno: esChoferExternoFinal,
       });
 
       return true;
@@ -106,6 +120,7 @@ export function useCrearRuta() {
     setEsChoferExterno,
     empresaEsPropia,
     creatingRuta,
+    loadData,
     openModal,
     closeModal,
     crearRuta,
