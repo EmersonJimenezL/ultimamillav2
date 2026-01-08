@@ -170,6 +170,9 @@ const despachoSchema = new mongoose.Schema(
       fotoEntrega: {
         type: String, // Base64 de la imagen
       },
+      firmaEntrega: {
+        type: String, // Base64 de la firma
+      },
       fechaEntrega: {
         type: Date,
       },

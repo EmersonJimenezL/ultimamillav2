@@ -1307,6 +1307,99 @@ app.post(
   }
 );
 
+// POST /api/despachos/:id/entregar-meson - Marcar despacho como entregado en meson (admin/bodega)
+app.post(
+  "/api/despachos/:id/entregar-meson",
+  authMiddleware,
+  requireRoles(["admin", "adminBodega", "subBodega"]),
+  async (req, res) => {
+    try {
+      const {
+        receptorRut,
+        receptorNombre,
+        receptorApellido,
+        documentoExterno,
+        firmaEntrega,
+      } = req.body || {};
+
+      const despacho = await Despacho.findById(req.params.id);
+
+      if (!despacho) {
+        return res.status(404).json({
+          status: "error",
+          message: "Despacho no encontrado",
+        });
+      }
+
+      // Evitar re-marcar si ya esta finalizado
+      if (
+        despacho.estado === "entregado" ||
+        despacho.estado === "no_entregado"
+      ) {
+        return res.status(400).json({
+          status: "error",
+          message: "El despacho ya fue marcado como entregado/no entregado",
+        });
+      }
+
+      if (!receptorRut || !receptorNombre || !receptorApellido || !firmaEntrega) {
+        return res.status(400).json({
+          status: "error",
+          message: "RUT, nombre, apellido y firma son obligatorios",
+        });
+      }
+
+      despacho.estado = "entregado";
+      if (!despacho.entrega) {
+        despacho.entrega = {};
+      }
+      if (receptorRut) despacho.entrega.receptorRut = receptorRut;
+      if (receptorNombre) despacho.entrega.receptorNombre = receptorNombre;
+      if (receptorApellido) despacho.entrega.receptorApellido = receptorApellido;
+      despacho.entrega.documentoExterno = documentoExterno || "MESON";
+      despacho.entrega.firmaEntrega = firmaEntrega;
+      despacho.entrega.fechaEntrega = new Date();
+      await despacho.save();
+
+      if (despacho.rutaAsignada) {
+        const ruta = await Ruta.findById(despacho.rutaAsignada).populate(
+          "despachos"
+        );
+
+        if (ruta) {
+          const despachosIds = ruta.despachos.map((d) => d._id || d);
+          const todosEntregados = await Despacho.find({
+            _id: { $in: despachosIds },
+          });
+
+          const todosEstanEntregados = todosEntregados.every((d) =>
+            isDespachoTerminal(d.estado)
+          );
+
+          if (todosEstanEntregados) {
+            ruta.estado = "finalizada";
+            ruta.fechaFinalizacion = new Date();
+            await ruta.save();
+          }
+        }
+      }
+
+      res.json({
+        status: "success",
+        message: "Despacho entregado en meson",
+        data: despacho,
+      });
+    } catch (error) {
+      console.error("? Error al entregar despacho en meson:", error);
+      res.status(500).json({
+        status: "error",
+        message: "Error al entregar despacho en meson",
+        error: error.message,
+      });
+    }
+  }
+);
+
 // POST /api/despachos/:id/entregar-chofer - Marcar despacho como entregado con datos del receptor y foto
 app.post(
   "/api/despachos/:id/entregar-chofer",
@@ -1314,20 +1407,26 @@ app.post(
   requireRoles(["chofer"]),
   async (req, res) => {
     try {
-      const { receptorRut, receptorNombre, receptorApellido, fotoEntrega } =
-        req.body;
+      const {
+        receptorRut,
+        receptorNombre,
+        receptorApellido,
+        fotoEntrega,
+        firmaEntrega,
+      } = req.body;
 
       // Validaciones
       if (
         !receptorRut ||
         !receptorNombre ||
         !receptorApellido ||
-        !fotoEntrega
+        !fotoEntrega ||
+        !firmaEntrega
       ) {
         return res.status(400).json({
           status: "error",
           message:
-            "Todos los campos son obligatorios: RUT, nombre, apellido y foto",
+            "Todos los campos son obligatorios: RUT, nombre, apellido, foto y firma",
         });
       }
 
@@ -1365,6 +1464,7 @@ app.post(
         receptorNombre: receptorNombre.trim(),
         receptorApellido: receptorApellido.trim(),
         fotoEntrega: fotoEntrega,
+        firmaEntrega: firmaEntrega,
         fechaEntrega: new Date(),
       };
       despacho.estado = "entregado";

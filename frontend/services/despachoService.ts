@@ -17,6 +17,8 @@ export interface Despacho {
     receptorNombre?: string;
     receptorApellido?: string;
     fotoEntrega?: string;
+    firmaEntrega?: string;
+    documentoExterno?: string;
     fechaEntrega?: string;
   };
   noEntrega?: {
@@ -113,7 +115,8 @@ class DespachoService {
     receptorRut: string,
     receptorNombre: string,
     receptorApellido: string,
-    fotoEntrega: string
+    fotoEntrega: string,
+    firmaEntrega: string
   ): Promise<Despacho> {
     const response = await fetch(`${API_URL}/api/despachos/${id}/entregar-chofer`, {
       method: "POST",
@@ -123,6 +126,7 @@ class DespachoService {
         receptorNombre,
         receptorApellido,
         fotoEntrega,
+        firmaEntrega,
       }),
     });
 
@@ -161,7 +165,35 @@ class DespachoService {
     return data.data;
   }
 
-  // Actualizar datos de entrega (para admin/bodega después de recibir info de empresa externa)
+  
+  // Entregar despacho en meson (admin/bodega)
+  async entregarEnMeson(
+    id: string,
+    receptorRut?: string,
+    receptorNombre?: string,
+    receptorApellido?: string,
+    firmaEntrega?: string
+  ): Promise<Despacho> {
+    const response = await fetch(`${API_URL}/api/despachos/${id}/entregar-meson`, {
+      method: "POST",
+      headers: this.getAuthHeader(),
+      body: JSON.stringify({
+        receptorRut,
+        receptorNombre,
+        receptorApellido,
+        firmaEntrega,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || "Error al entregar en meson");
+    }
+
+    const data = await response.json();
+    return data.data;
+  }
+// Actualizar datos de entrega (para admin/bodega después de recibir info de empresa externa)
   async actualizarDatosEntrega(
     id: string,
     receptorRut?: string,
@@ -203,3 +235,4 @@ class DespachoService {
 }
 
 export const despachoService = new DespachoService();
+

@@ -1,4 +1,4 @@
-import { Modal, Button, useDialog } from "@/components/ui";
+import { Modal, Button, SignaturePad, useDialog } from "@/components/ui";
 import { useEntregaDespacho } from "@/hooks/useEntregaDespacho";
 import type { DespachoConEntrega } from "@/services/rutaService";
 
@@ -38,6 +38,7 @@ export function ModalEntregarDespacho({
     handleMotivoNoEntregaChange,
     handleObservacionNoEntregaChange,
     handleFotoChange,
+    handleFirmaChange,
     entregarDespacho,
     marcarNoEntregado,
   } = useEntregaDespacho();
@@ -200,6 +201,20 @@ export function ModalEntregarDespacho({
               />
               {errors.apellidoError && (
                 <p className="text-red-500 text-sm mt-1">{errors.apellidoError}</p>
+              )}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Firma del Receptor <span className="text-red-500">*</span>
+              </label>
+              <SignaturePad
+                value={formData.firmaEntregaPreview}
+                onChange={handleFirmaChange}
+                disabled={entregando}
+                height={160}
+              />
+              {errors.firmaEntregaError && (
+                <p className="text-red-500 text-sm mt-1">{errors.firmaEntregaError}</p>
               )}
             </div>
           </div>

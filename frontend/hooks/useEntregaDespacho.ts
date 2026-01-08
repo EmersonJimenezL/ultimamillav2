@@ -9,6 +9,7 @@ interface FormData {
   receptorNombre: string;
   receptorApellido: string;
   fotoEntregaPreview: string | null;
+  firmaEntregaPreview: string | null;
   motivoNoEntrega: string;
   observacionNoEntrega: string;
   fotoEvidenciaPreview: string | null;
@@ -20,6 +21,7 @@ interface FormErrors {
   nombreError: string;
   apellidoError: string;
   fotoEntregaError: string;
+  firmaEntregaError: string;
   fotoEvidenciaError: string;
 }
 
@@ -30,6 +32,7 @@ export function useEntregaDespacho() {
     receptorNombre: "",
     receptorApellido: "",
     fotoEntregaPreview: null,
+    firmaEntregaPreview: null,
     motivoNoEntrega: "",
     observacionNoEntrega: "",
     fotoEvidenciaPreview: null,
@@ -41,6 +44,7 @@ export function useEntregaDespacho() {
     nombreError: "",
     apellidoError: "",
     fotoEntregaError: "",
+    firmaEntregaError: "",
     fotoEvidenciaError: "",
   });
 
@@ -54,6 +58,7 @@ export function useEntregaDespacho() {
       receptorNombre: "",
       receptorApellido: "",
       fotoEntregaPreview: null,
+      firmaEntregaPreview: null,
       motivoNoEntrega: "",
       observacionNoEntrega: "",
       fotoEvidenciaPreview: null,
@@ -64,6 +69,7 @@ export function useEntregaDespacho() {
       nombreError: "",
       apellidoError: "",
       fotoEntregaError: "",
+      firmaEntregaError: "",
       fotoEvidenciaError: "",
     });
     if (fileInputRef.current) fileInputRef.current.value = "";
@@ -78,6 +84,7 @@ export function useEntregaDespacho() {
       nombreError: "",
       apellidoError: "",
       fotoEntregaError: "",
+      firmaEntregaError: "",
       fotoEvidenciaError: "",
     }));
     if (fileInputRef.current) fileInputRef.current.value = "";
@@ -161,6 +168,14 @@ export function useEntregaDespacho() {
     reader.readAsDataURL(file);
   };
 
+  const handleFirmaChange = (dataUrl: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      firmaEntregaPreview: dataUrl || null,
+    }));
+    setErrors((prev) => ({ ...prev, firmaEntregaError: "" }));
+  };
+
   const validarFormulario = (): boolean => {
     const newErrors: FormErrors = {
       motivoError: "",
@@ -168,6 +183,7 @@ export function useEntregaDespacho() {
       nombreError: "",
       apellidoError: "",
       fotoEntregaError: "",
+      firmaEntregaError: "",
       fotoEvidenciaError: "",
     };
 
@@ -196,6 +212,11 @@ export function useEntregaDespacho() {
         newErrors.fotoEntregaError = "Debes tomar una foto de la entrega";
         isValid = false;
       }
+
+      if (!formData.firmaEntregaPreview) {
+        newErrors.firmaEntregaError = "La firma del receptor es obligatoria";
+        isValid = false;
+      }
     } else {
       if (!formData.motivoNoEntrega.trim()) {
         newErrors.motivoError = "Debes seleccionar un motivo";
@@ -222,7 +243,8 @@ export function useEntregaDespacho() {
         formData.receptorRut,
         formData.receptorNombre,
         formData.receptorApellido,
-        formData.fotoEntregaPreview!
+        formData.fotoEntregaPreview!,
+        formData.firmaEntregaPreview!
       );
       return true;
     } finally {
@@ -261,8 +283,8 @@ export function useEntregaDespacho() {
     handleMotivoNoEntregaChange,
     handleObservacionNoEntregaChange,
     handleFotoChange,
+    handleFirmaChange,
     entregarDespacho,
     marcarNoEntregado,
   };
 }
-

@@ -1,24 +1,41 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef, type DragEvent } from "react";
-import { Button, Modal, useDialog } from "@/components/ui";
+import { Button, Modal, SignaturePad, useDialog } from "@/components/ui";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { DespachoCard } from "@/components/despachos";
 import { useDespachos, useCrearRuta } from "@/hooks";
 import { NavBar } from "@/components/layout";
 import { isEmpresaPropia } from "@/utils";
 import { getNombreCompleto } from "@/services/userService";
+import { despachoService } from "@/services/despachoService";
 
 const itemsPerPage = 20;
 
 export default function DespachosPage() {
   const { dialog, showAlert } = useDialog();
   const creatingRef = useRef(false);
+  const entregandoMesonRef = useRef(false);
   const [assignments, setAssignments] = useState<Record<string, string[]>>({});
   const [dragOverTarget, setDragOverTarget] = useState<string | null>(null);
   const [dragOverTrash, setDragOverTrash] = useState(false);
+  const [dragOverMeson, setDragOverMeson] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [mesonFolios, setMesonFolios] = useState<string[]>([]);
+  const [mesonModalOpen, setMesonModalOpen] = useState(false);
+  const [mesonForm, setMesonForm] = useState({
+    receptorRut: "",
+    receptorNombre: "",
+    receptorApellido: "",
+    firmaEntrega: "",
+  });
+  const [mesonErrors, setMesonErrors] = useState({
+    rut: "",
+    nombre: "",
+    apellido: "",
+    firma: "",
+  });
   const [modalTarget, setModalTarget] = useState<{
     id: string;
     name: string;
@@ -206,7 +223,114 @@ export default function DespachosPage() {
     setDragOverTrash(false);
   };
 
-  const handleCrearRutaChofer = async (choferId: string) => {
+  const handleMesonDrop = async (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    const despachoId = event.dataTransfer.getData("text/plain");
+    if (!despachoId) return;
+    setDragOverMeson(false);
+    setMesonFolios((prev) =>
+      prev.includes(despachoId) ? prev : [...prev, despachoId]
+    );
+  };
+
+  const handleMesonDragOver = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    setDragOverMeson(true);
+  };
+
+  const handleMesonDragLeave = () => {
+    setDragOverMeson(false);
+  };
+
+  const resetMesonForm = () => {
+    setMesonForm({
+      receptorRut: "",
+      receptorNombre: "",
+      receptorApellido: "",
+      firmaEntrega: "",
+    });
+    setMesonErrors({ rut: "", nombre: "", apellido: "", firma: "" });
+    setMesonFolios([]);
+  };
+
+  const formatRut = (value: string) => {
+    const cleaned = value.replace(/[.-]/g, "");
+    const numbers = cleaned.slice(0, -1);
+    const dv = cleaned.slice(-1);
+    let formatted = "";
+    for (let i = numbers.length - 1, j = 0; i >= 0; i--, j++) {
+      if (j > 0 && j % 3 === 0) {
+        formatted = "." + formatted;
+      }
+      formatted = numbers[i] + formatted;
+    }
+    return formatted + (dv ? `-${dv}` : "");
+  };
+
+  const handleMesonRutChange = (value: string) => {
+    const cleaned = value.replace(/[^0-9kK]/g, "");
+    if (cleaned.length <= 9) {
+      setMesonForm((prev) => ({ ...prev, receptorRut: cleaned }));
+      setMesonErrors((prev) => ({ ...prev, rut: "" }));
+    }
+  };
+
+  const handleMesonSubmit = async () => {
+    if (mesonFolios.length === 0 || entregandoMesonRef.current) return;
+
+    const nextErrors = { rut: "", nombre: "", apellido: "", firma: "" };
+    let isValid = true;
+
+    if (!mesonForm.receptorRut.trim() || mesonForm.receptorRut.length < 8) {
+      nextErrors.rut = "Ingresa un RUT valido";
+      isValid = false;
+    }
+    if (!mesonForm.receptorNombre.trim()) {
+      nextErrors.nombre = "El nombre es obligatorio";
+      isValid = false;
+    }
+    if (!mesonForm.receptorApellido.trim()) {
+      nextErrors.apellido = "El apellido es obligatorio";
+      isValid = false;
+    }
+    if (!mesonForm.firmaEntrega) {
+      nextErrors.firma = "La firma es obligatoria";
+      isValid = false;
+    }
+
+    setMesonErrors(nextErrors);
+    if (!isValid) return;
+
+    try {
+      entregandoMesonRef.current = true;
+      await Promise.all(
+        mesonFolios.map((folioId) =>
+          despachoService.entregarEnMeson(
+            folioId,
+            mesonForm.receptorRut,
+            mesonForm.receptorNombre,
+            mesonForm.receptorApellido,
+            mesonForm.firmaEntrega
+          )
+        )
+      );
+      clearAssignmentsForIds(mesonFolios);
+      await showAlert(
+        `Despacho${mesonFolios.length === 1 ? "" : "s"} entregado${mesonFolios.length === 1 ? "" : "s"} en meson.`,
+        { variant: "success" }
+      );
+      setMesonModalOpen(false);
+      resetMesonForm();
+      await loadDespachos();
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Error al entregar en meson";
+      await showAlert(message, { title: "Error", variant: "danger" });
+    } finally {
+      entregandoMesonRef.current = false;
+    }
+  };
+
+  const handleCrearRutaChofer = async (choferId: string, choferUsuario: string) => {
     const empresaId = empresaPropia?._id;
     if (!empresaId) {
       await showAlert("No se encontro la empresa propia para asignar choferes.", {
@@ -224,7 +348,7 @@ export default function DespachosPage() {
       creatingRef.current = true;
       const created = await crearRuta(despachoIds, {
         empresaId,
-        choferId,
+        choferId: choferUsuario,
         esChoferExterno: false,
       });
       if (!created) return;
@@ -493,7 +617,7 @@ export default function DespachosPage() {
                                 Ver folios
                               </Button>
                               <Button
-                                onClick={() => handleCrearRutaChofer(chofer._id)}
+                                onClick={() => handleCrearRutaChofer(chofer._id, chofer.usuario)}
                                 variant="primary"
                                 size="sm"
                                 className="px-2.5 py-1 text-xs"
@@ -589,6 +713,58 @@ export default function DespachosPage() {
                   </div>
                 )}
               </div>
+
+              <div className="rounded-2xl border border-gray-200 bg-white p-2.5 shadow-sm">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">Entregas en meson</h3>
+                    <p className="text-[11px] text-gray-500">
+                      Arrastra despachos aqui para marcar entrega en meson.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-semibold text-amber-800 bg-amber-50 px-2 py-1 rounded-full border border-amber-100">
+                      Folios: {mesonFolios.length}
+                    </span>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="px-2.5 py-1 text-xs"
+                      onClick={() => setMesonModalOpen(true)}
+                      disabled={mesonFolios.length === 0}
+                    >
+                      Ver folios
+                    </Button>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      className="px-2.5 py-1 text-xs"
+                      onClick={() => setMesonModalOpen(true)}
+                      disabled={mesonFolios.length === 0}
+                    >
+                      Confirmar
+                    </Button>
+                  </div>
+                </div>
+                <div
+                  className={`mt-3 rounded-2xl border border-dashed p-4 text-center transition-colors ${
+                    dragOverMeson
+                      ? "border-amber-400 bg-amber-50"
+                      : "border-amber-200 bg-amber-50/40"
+                  }`}
+                  onDragOver={handleMesonDragOver}
+                  onDragLeave={handleMesonDragLeave}
+                  onDrop={handleMesonDrop}
+                >
+                  <div className="text-2xl">🧾</div>
+                  <p className="text-sm font-semibold text-amber-800">
+                    Entrega en meson
+                  </p>
+                  <p className="text-xs text-amber-700">
+                    Suelta aqui para finalizar el despacho.
+                  </p>
+                </div>
+              </div>
             </aside>
           </div>
         </main>
@@ -624,6 +800,149 @@ export default function DespachosPage() {
                 Arrastra folios aquí para sacarlos de la ruta.
               </p>
             </div>
+          </div>
+        </div>
+      </Modal>
+      <Modal
+        isOpen={mesonModalOpen}
+        onClose={() => {
+          resetMesonForm();
+          setMesonModalOpen(false);
+        }}
+        title="Entrega en meson"
+        size="lg"
+      >
+        <div className="space-y-4">
+          {mesonFolios.length > 0 && (
+            <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-800">
+              <div className="font-semibold mb-2">
+                Folios en meson ({mesonFolios.length})
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {mesonFolios.map((folioId) => {
+                  const despacho = despachoById.get(folioId);
+                  if (!despacho) return null;
+                  return (
+                    <div
+                      key={folioId}
+                      className="flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1 text-xs text-gray-700"
+                    >
+                      <span>Folio {despacho.FolioNum}</span>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setMesonFolios((prev) =>
+                            prev.filter((id) => id !== folioId)
+                          )
+                        }
+                        className="text-gray-400 hover:text-gray-700"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              RUT del receptor <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={formatRut(mesonForm.receptorRut)}
+              onChange={(e) => handleMesonRutChange(e.target.value)}
+              className={`w-full px-3 py-2 border rounded-lg bg-gray-100 text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 ${
+                mesonErrors.rut
+                  ? "border-red-300 focus:ring-red-500"
+                  : "border-gray-300 focus:ring-blue-500"
+              }`}
+              placeholder="12.345.678-9"
+            />
+            {mesonErrors.rut && (
+              <p className="text-red-500 text-sm mt-1">{mesonErrors.rut}</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Nombre del receptor <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={mesonForm.receptorNombre}
+              onChange={(e) =>
+                setMesonForm((prev) => ({ ...prev, receptorNombre: e.target.value }))
+              }
+              className={`w-full px-3 py-2 border rounded-lg bg-gray-100 text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 ${
+                mesonErrors.nombre
+                  ? "border-red-300 focus:ring-red-500"
+                  : "border-gray-300 focus:ring-blue-500"
+              }`}
+              placeholder="Ingresa el nombre"
+            />
+            {mesonErrors.nombre && (
+              <p className="text-red-500 text-sm mt-1">{mesonErrors.nombre}</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Apellido del receptor <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={mesonForm.receptorApellido}
+              onChange={(e) =>
+                setMesonForm((prev) => ({ ...prev, receptorApellido: e.target.value }))
+              }
+              className={`w-full px-3 py-2 border rounded-lg bg-gray-100 text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 ${
+                mesonErrors.apellido
+                  ? "border-red-300 focus:ring-red-500"
+                  : "border-gray-300 focus:ring-blue-500"
+              }`}
+              placeholder="Ingresa el apellido"
+            />
+            {mesonErrors.apellido && (
+              <p className="text-red-500 text-sm mt-1">{mesonErrors.apellido}</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Firma del receptor <span className="text-red-500">*</span>
+            </label>
+            <SignaturePad
+              value={mesonForm.firmaEntrega}
+              onChange={(dataUrl) =>
+                setMesonForm((prev) => ({ ...prev, firmaEntrega: dataUrl }))
+              }
+              height={160}
+            />
+            {mesonErrors.firma && (
+              <p className="text-red-500 text-sm mt-1">{mesonErrors.firma}</p>
+            )}
+          </div>
+
+          <div className="flex gap-3 pt-2">
+            <Button
+              variant="secondary"
+              onClick={() => {
+                resetMesonForm();
+              }}
+              className="flex-1"
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleMesonSubmit}
+              className="flex-1"
+            >
+              Confirmar entrega
+            </Button>
           </div>
         </div>
       </Modal>
