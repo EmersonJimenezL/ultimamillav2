@@ -62,6 +62,117 @@ export function RutaCard({
     ruta.estado !== "cancelada" &&
     ruta.estado !== "finalizada";
 
+  const puedeImprimirEtiquetas = !esRutaExterna;
+
+  const formatDocDate = (value: unknown) => {
+    if (!value) return "N/A";
+    const date = new Date(String(value));
+    if (Number.isNaN(date.getTime())) return String(value);
+    return date.toLocaleDateString("es-CL");
+  };
+
+  const handlePrintEtiqueta = async (despacho: DespachoConEntrega) => {
+    try {
+      const labelWidthPx = 420;
+
+      const folio = despacho.FolioNum ?? "N/A";
+      const cliente = despacho.CardName ?? "";
+      const direccionRaw = despacho.Address2 ?? "";
+      const direccion =
+        direccionRaw.length > 80 ? `${direccionRaw.slice(0, 77)}...` : direccionRaw;
+      const fecha = formatDocDate((despacho as { DocDate?: string }).DocDate);
+      const printWindow = window.open("", "_blank", "width=420,height=600");
+      if (!printWindow) {
+        await showAlert("No se pudo abrir la ventana de impresión.", {
+          title: "Impresión",
+          variant: "danger",
+        });
+        return;
+      }
+
+      printWindow.document.open();
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Etiqueta despacho ${folio}</title>
+            <style>
+              * { box-sizing: border-box; }
+              @page { margin: 0; }
+              html, body { margin: 0; padding: 0; }
+              body { font-family: "Segoe UI", Arial, sans-serif; color: #0f172a; }
+              .label {
+                width: ${labelWidthPx}px;
+                padding: 14px 16px;
+                border: 1px solid #e2e8f0;
+                border-radius: 10px;
+                background: #ffffff;
+              }
+              .header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 12px;
+                padding-bottom: 8px;
+                border-bottom: 1px solid #e2e8f0;
+                margin-bottom: 10px;
+              }
+              .chip {
+                font-size: 11px;
+                font-weight: 700;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                color: #1f2937;
+                background: #f1f5f9;
+                padding: 4px 8px;
+                border-radius: 999px;
+              }
+              .folio {
+                font-size: 20px;
+                font-weight: 800;
+              }
+              .meta {
+                font-size: 12px;
+                color: #334155;
+                line-height: 1.4;
+              }
+              .meta strong { color: #0f172a; }
+              .section {
+                display: grid;
+                gap: 6px;
+              }
+              @media print {
+                * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+              }
+            </style>
+          </head>
+          <body>
+            <div class="label">
+              <div class="header">
+                <div class="chip">Etiqueta despacho</div>
+                <div class="folio">Folio ${folio}</div>
+              </div>
+              <div class="section">
+                <div class="meta"><strong>Cliente:</strong> ${cliente}</div>
+                <div class="meta"><strong>Dirección:</strong> ${direccion}</div>
+                <div class="meta"><strong>Fecha:</strong> ${fecha}</div>
+              </div>
+            </div>
+            <script>
+              window.print();
+              window.close();
+            </script>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+    } catch (err) {
+      await showAlert(getErrorMessage(err), {
+        title: "Error al imprimir",
+        variant: "danger",
+      });
+    }
+  };
+
   const handleLiberarDespacho = async (despacho: DespachoConEntrega) => {
     if (!puedeGestionarExterna) return;
 
@@ -81,7 +192,10 @@ export function RutaCard({
       await showAlert(result.message, { variant: "success" });
       await onReload();
     } catch (err) {
-      await showAlert(getErrorMessage(err), { title: "Error", variant: "danger" });
+      await showAlert(getErrorMessage(err), {
+        title: "Error",
+        variant: "danger",
+      });
     } finally {
       setProcesandoDespacho(null);
     }
@@ -90,7 +204,9 @@ export function RutaCard({
   const handleFinalizarRuta = async () => {
     if (!puedeGestionarExterna) return;
 
-    const ok = await showConfirm("¿Finalizar esta ruta?", { variant: "warning" });
+    const ok = await showConfirm("¿Finalizar esta ruta?", {
+      variant: "warning",
+    });
     if (!ok) return;
 
     try {
@@ -117,7 +233,10 @@ export function RutaCard({
       await showAlert(result.message, { variant: "success" });
       await onReload();
     } catch (err) {
-      await showAlert(getErrorMessage(err), { title: "Error", variant: "danger" });
+      await showAlert(getErrorMessage(err), {
+        title: "Error",
+        variant: "danger",
+      });
     } finally {
       setFinalizando(false);
     }
@@ -333,6 +452,18 @@ export function RutaCard({
                         </div>
 
                         <div className="flex flex-col gap-1">
+                          {puedeImprimirEtiquetas && (
+                            <Button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                void handlePrintEtiqueta(despacho);
+                              }}
+                              variant="outline"
+                              size="sm"
+                            >
+                              🖨️ Etiqueta
+                            </Button>
+                          )}
                           {puedeGestionarExterna &&
                             !["entregado", "cancelado"].includes(
                               despacho.estado
