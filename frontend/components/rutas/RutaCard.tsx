@@ -491,17 +491,18 @@ export function RutaCard({
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Button
-              onClick={(e) => {
-                e.stopPropagation();
-                void handlePrintResumenRuta();
-              }}
-              variant="outline"
-              size="sm"
-            >
-              🖨️ Resumen
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  void handlePrintResumenRuta();
+                }}
+                variant="outline"
+                size="sm"
+                className="px-3 py-1.5 text-xs"
+              >
+                🖨️ Resumen
+              </Button>
             <button
               className="text-gray-400 hover:text-gray-600 transition-transform"
               style={{
@@ -683,6 +684,7 @@ export function RutaCard({
                               }}
                               variant="outline"
                               size="sm"
+                              className="px-3 py-1.5 text-xs"
                             >
                               🖨️ Etiqueta
                             </Button>
