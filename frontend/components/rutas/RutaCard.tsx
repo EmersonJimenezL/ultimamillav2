@@ -68,20 +68,19 @@ export function RutaCard({
     if (!value) return "N/A";
     const date = new Date(String(value));
     if (Number.isNaN(date.getTime())) return String(value);
-    return date.toLocaleDateString("es-CL");
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = String(date.getFullYear() % 100).padStart(2, "0");
+    return `${day}-${month}-${year}`;
   };
 
   const handlePrintEtiqueta = async (despacho: DespachoConEntrega) => {
     try {
-      const labelWidthPx = 420;
+      const labelWidthMm = 50;
+      const labelHeightMm = 30;
 
       const folio = despacho.FolioNum ?? "N/A";
       const cliente = despacho.CardName ?? "";
-      const direccionRaw = despacho.Address2 ?? "";
-      const direccion =
-        direccionRaw.length > 80
-          ? `${direccionRaw.slice(0, 77)}...`
-          : direccionRaw;
       const fecha = formatDocDate((despacho as { DocDate?: string }).DocDate);
       const printWindow = window.open("", "_blank", "width=420,height=600");
       if (!printWindow) {
@@ -99,49 +98,40 @@ export function RutaCard({
             <title>Etiqueta despacho ${folio}</title>
             <style>
               * { box-sizing: border-box; }
-              @page { margin: 0; }
-              html, body { margin: 0; padding: 0; }
+              @page { size: ${labelWidthMm}mm ${labelHeightMm}mm; margin: 0; }
+              html, body { width: ${labelWidthMm}mm; height: ${labelHeightMm}mm; margin: 0; padding: 0; }
               body { font-family: "Segoe UI", Arial, sans-serif; color: #0f172a; }
               .label {
-                width: ${labelWidthPx}px;
-                padding: 14px 16px;
+                width: ${labelWidthMm}mm;
+                height: ${labelHeightMm}mm;
+                padding: 2mm 2.5mm;
                 border: 1px solid #e2e8f0;
-                border-radius: 10px;
+                border-radius: 2mm;
                 background: #ffffff;
               }
               .header {
                 display: flex;
                 align-items: center;
                 justify-content: space-between;
-                gap: 12px;
-                padding-bottom: 8px;
+                gap: 2mm;
+                padding-bottom: 1.5mm;
                 border-bottom: 1px solid #e2e8f0;
-                margin-bottom: 10px;
+                margin-bottom: 1.5mm;
               }
               .chip {
-                font-size: 11px;
+                font-size: 6.5pt;
                 font-weight: 700;
                 letter-spacing: 0.08em;
                 text-transform: uppercase;
                 color: #1f2937;
                 background: #f1f5f9;
-                padding: 4px 8px;
+                padding: 1mm 1.5mm;
                 border-radius: 999px;
               }
-              .folio {
-                font-size: 20px;
-                font-weight: 800;
-              }
-              .meta {
-                font-size: 12px;
-                color: #334155;
-                line-height: 1.4;
-              }
+              .folio { font-size: 12pt; font-weight: 800; }
+              .meta { font-size: 7.5pt; color: #334155; line-height: 1.3; }
               .meta strong { color: #0f172a; }
-              .section {
-                display: grid;
-                gap: 6px;
-              }
+              .section { display: grid; gap: 1.2mm; }
               @media print {
                 * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
               }
@@ -150,13 +140,11 @@ export function RutaCard({
           <body>
             <div class="label">
               <div class="header">
-                <div class="chip">Etiqueta despacho</div>
+                <div class="chip">${fecha}</div>
                 <div class="folio">Folio ${folio}</div>
               </div>
               <div class="section">
                 <div class="meta"><strong>Cliente:</strong> ${cliente}</div>
-                <div class="meta"><strong>Dirección:</strong> ${direccion}</div>
-                <div class="meta"><strong>Fecha:</strong> ${fecha}</div>
               </div>
             </div>
             <script>
@@ -351,22 +339,15 @@ export function RutaCard({
         .map((despacho) => {
           const folio = despacho.FolioNum ?? "N/A";
           const cliente = despacho.CardName ?? "";
-          const direccionRaw = despacho.Address2 ?? "";
-          const direccion =
-            direccionRaw.length > 80
-              ? `${direccionRaw.slice(0, 77)}...`
-              : direccionRaw;
           const fecha = formatDocDate((despacho as { DocDate?: string }).DocDate);
           return `
             <div class="label">
               <div class="header">
-                <div class="chip">Etiqueta despacho</div>
+                <div class="chip">${fecha}</div>
                 <div class="folio">Folio ${folio}</div>
               </div>
               <div class="section">
                 <div class="meta"><strong>Cliente:</strong> ${cliente}</div>
-                <div class="meta"><strong>Dirección:</strong> ${direccion}</div>
-                <div class="meta"><strong>Fecha:</strong> ${fecha}</div>
               </div>
             </div>
           `;
@@ -380,38 +361,40 @@ export function RutaCard({
             <title>Etiquetas ${ruta.numeroRuta || ruta._id}</title>
             <style>
               * { box-sizing: border-box; }
-              @page { margin: 12mm; }
+              @page { size: 50mm 30mm; margin: 0; }
+              html, body { margin: 0; padding: 0; }
               body { font-family: "Segoe UI", Arial, sans-serif; color: #0f172a; }
               .label {
-                width: 360px;
-                padding: 14px 16px;
+                width: 50mm;
+                height: 30mm;
+                padding: 2mm 2.5mm;
                 border: 1px solid #e2e8f0;
-                border-radius: 10px;
+                border-radius: 2mm;
                 background: #ffffff;
               }
               .header {
                 display: flex;
                 align-items: center;
                 justify-content: space-between;
-                gap: 12px;
-                padding-bottom: 8px;
+                gap: 2mm;
+                padding-bottom: 1.5mm;
                 border-bottom: 1px solid #e2e8f0;
-                margin-bottom: 10px;
+                margin-bottom: 1.5mm;
               }
               .chip {
-                font-size: 11px;
+                font-size: 7pt;
                 font-weight: 700;
                 letter-spacing: 0.08em;
                 text-transform: uppercase;
                 color: #1f2937;
                 background: #f1f5f9;
-                padding: 4px 8px;
+                padding: 1mm 1.5mm;
                 border-radius: 999px;
               }
-              .folio { font-size: 20px; font-weight: 800; }
-              .meta { font-size: 12px; color: #334155; line-height: 1.4; }
+              .folio { font-size: 12pt; font-weight: 800; }
+              .meta { font-size: 7.5pt; color: #334155; line-height: 1.3; }
               .meta strong { color: #0f172a; }
-              .section { display: grid; gap: 6px; }
+              .section { display: grid; gap: 1.2mm; }
               .page-break { page-break-after: always; }
               @media print {
                 * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
