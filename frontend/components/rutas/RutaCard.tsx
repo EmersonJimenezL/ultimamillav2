@@ -79,7 +79,9 @@ export function RutaCard({
       const cliente = despacho.CardName ?? "";
       const direccionRaw = despacho.Address2 ?? "";
       const direccion =
-        direccionRaw.length > 80 ? `${direccionRaw.slice(0, 77)}...` : direccionRaw;
+        direccionRaw.length > 80
+          ? `${direccionRaw.slice(0, 77)}...`
+          : direccionRaw;
       const fecha = formatDocDate((despacho as { DocDate?: string }).DocDate);
       const printWindow = window.open("", "_blank", "width=420,height=600");
       if (!printWindow) {
@@ -242,6 +244,199 @@ export function RutaCard({
     }
   };
 
+  const handlePrintResumenRuta = async () => {
+    try {
+      const numeroRuta = ruta.numeroRuta || `Ruta ${ruta._id.slice(-6)}`;
+      const empresa =
+        typeof ruta.empresaReparto === "object"
+          ? ruta.empresaReparto.razonSocial
+          : ruta.empresaReparto;
+      const conductorNombre = conductorLabel || "N/A";
+
+      const printWindow = window.open("", "_blank", "width=900,height=700");
+      if (!printWindow) {
+        await showAlert("No se pudo abrir la ventana de impresión.", {
+          title: "Impresión",
+          variant: "danger",
+        });
+        return;
+      }
+
+      const rows = despachos
+        .map(
+          (despacho, index) => `
+            <tr>
+              <td>${index + 1}</td>
+              <td>${despacho.FolioNum ?? "N/A"}</td>
+              <td>${despacho.CardName ?? ""}</td>
+              <td>${despacho.Address2 ?? ""}</td>
+            </tr>
+          `
+        )
+        .join("");
+
+      printWindow.document.open();
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Resumen ${numeroRuta}</title>
+            <style>
+              * { box-sizing: border-box; }
+              @page { size: A4 portrait; margin: 12mm; }
+              body { font-family: Arial, sans-serif; color: #111827; }
+              h1 { font-size: 20px; margin: 0 0 8px; }
+              .meta { font-size: 12px; color: #374151; margin-bottom: 12px; }
+              .meta strong { color: #111827; }
+              table { width: 100%; border-collapse: collapse; font-size: 12px; }
+              th, td { border: 1px solid #e5e7eb; padding: 6px 8px; text-align: left; vertical-align: top; }
+              th { background: #f8fafc; }
+              .summary { margin-top: 10px; font-size: 12px; }
+            </style>
+          </head>
+          <body>
+            <h1>Resumen de Ruta</h1>
+            <div class="meta">
+              <div><strong>Ruta:</strong> ${numeroRuta}</div>
+              <div><strong>Conductor:</strong> ${conductorNombre}</div>
+              <div><strong>Empresa:</strong> ${empresa ?? "N/A"}</div>
+              <div><strong>Fecha asignación:</strong> ${new Date(
+                ruta.asignadoEl
+              ).toLocaleString("es-CL")}</div>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Folio</th>
+                  <th>Cliente</th>
+                  <th>Dirección</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rows || ""}
+              </tbody>
+            </table>
+            <div class="summary">
+              <strong>Total despachos:</strong> ${totalDespachos} 
+            </div>
+            <script>
+              window.print();
+              window.close();
+            </script>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+    } catch (err) {
+      await showAlert(getErrorMessage(err), {
+        title: "Error al imprimir",
+        variant: "danger",
+      });
+    }
+  };
+
+  const handlePrintEtiquetasRuta = async () => {
+    try {
+      if (despachos.length === 0) return;
+      const printWindow = window.open("", "_blank", "width=900,height=700");
+      if (!printWindow) {
+        await showAlert("No se pudo abrir la ventana de impresión.", {
+          title: "Impresión",
+          variant: "danger",
+        });
+        return;
+      }
+
+      const etiquetas = despachos
+        .map((despacho) => {
+          const folio = despacho.FolioNum ?? "N/A";
+          const cliente = despacho.CardName ?? "";
+          const direccionRaw = despacho.Address2 ?? "";
+          const direccion =
+            direccionRaw.length > 80
+              ? `${direccionRaw.slice(0, 77)}...`
+              : direccionRaw;
+          const fecha = formatDocDate((despacho as { DocDate?: string }).DocDate);
+          return `
+            <div class="label">
+              <div class="header">
+                <div class="chip">Etiqueta despacho</div>
+                <div class="folio">Folio ${folio}</div>
+              </div>
+              <div class="section">
+                <div class="meta"><strong>Cliente:</strong> ${cliente}</div>
+                <div class="meta"><strong>Dirección:</strong> ${direccion}</div>
+                <div class="meta"><strong>Fecha:</strong> ${fecha}</div>
+              </div>
+            </div>
+          `;
+        })
+        .join('<div class="page-break"></div>');
+
+      printWindow.document.open();
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Etiquetas ${ruta.numeroRuta || ruta._id}</title>
+            <style>
+              * { box-sizing: border-box; }
+              @page { margin: 12mm; }
+              body { font-family: "Segoe UI", Arial, sans-serif; color: #0f172a; }
+              .label {
+                width: 360px;
+                padding: 14px 16px;
+                border: 1px solid #e2e8f0;
+                border-radius: 10px;
+                background: #ffffff;
+              }
+              .header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 12px;
+                padding-bottom: 8px;
+                border-bottom: 1px solid #e2e8f0;
+                margin-bottom: 10px;
+              }
+              .chip {
+                font-size: 11px;
+                font-weight: 700;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                color: #1f2937;
+                background: #f1f5f9;
+                padding: 4px 8px;
+                border-radius: 999px;
+              }
+              .folio { font-size: 20px; font-weight: 800; }
+              .meta { font-size: 12px; color: #334155; line-height: 1.4; }
+              .meta strong { color: #0f172a; }
+              .section { display: grid; gap: 6px; }
+              .page-break { page-break-after: always; }
+              @media print {
+                * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                .page-break:last-child { page-break-after: auto; }
+              }
+            </style>
+          </head>
+          <body>
+            ${etiquetas}
+            <script>
+              window.print();
+              window.close();
+            </script>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+    } catch (err) {
+      await showAlert(getErrorMessage(err), {
+        title: "Error al imprimir",
+        variant: "danger",
+      });
+    }
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow">
       {dialog}
@@ -296,26 +491,38 @@ export function RutaCard({
             </div>
           </div>
 
-          <button
-            className="text-gray-400 hover:text-gray-600 transition-transform"
-            style={{
-              transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)",
-            }}
-          >
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={(e) => {
+                e.stopPropagation();
+                void handlePrintResumenRuta();
+              }}
+              variant="outline"
+              size="sm"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 9l-7 7-7-7"
-              />
-            </svg>
-          </button>
+              🖨️ Resumen
+            </Button>
+            <button
+              className="text-gray-400 hover:text-gray-600 transition-transform"
+              style={{
+                transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)",
+              }}
+            >
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -329,7 +536,20 @@ export function RutaCard({
               despachos={despachos}
             />
 
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <Button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  void handlePrintEtiquetasRuta();
+                }}
+                variant="outline"
+                size="sm"
+                className="px-3 py-1.5 text-xs"
+                disabled={despachos.length === 0}
+              >
+                🖨️ Imprimir etiquetas
+              </Button>
+              <div className="flex flex-wrap gap-2">
               {puedeGestionarExterna && (
                 <Button
                   onClick={(e) => {
@@ -338,6 +558,7 @@ export function RutaCard({
                   }}
                   variant="primary"
                   size="sm"
+                  className="px-3 py-1.5 text-xs"
                   disabled={finalizando}
                   className="from-green-500! via-emerald-500! to-green-700! hover:from-green-600! hover:via-emerald-600! hover:to-green-800!"
                 >
@@ -353,11 +574,13 @@ export function RutaCard({
                   }}
                   variant="danger"
                   size="sm"
+                  className="px-3 py-1.5 text-xs"
                   disabled={cancelando}
                 >
                   {cancelando ? "Cancelando..." : "❌ Cancelar Ruta"}
                 </Button>
               )}
+              </div>
             </div>
 
             {despachos.length > 0 && (
